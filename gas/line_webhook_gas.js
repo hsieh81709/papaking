@@ -53,6 +53,7 @@ var LINE_REPLY_URL = 'https://api.line.me/v2/bot/message/reply'
 var NTPC_API = 'https://data.ntpc.gov.tw/api/datasets/'
 var NTPC_CARPARK_STATIC = 'b1464ef0-9c7c-4a6f-abf7-6bdf32847e68'
 var NTPC_CARPARK_LIVE = 'e09b35a5-a738-48cc-b0f5-570b67ad9c78'
+var NTPC_ONSTREET_STATIC = 'd9f18db5-41c7-41d4-b7f0-82a335255b08'
 var NTPC_PAGE_SIZE = 1000
 // 基隆市政府同樣沒上傳 TDX。靜態 CSV 只有 22 座公有場站、沒有座標（地址用 Google geocode 一次，永久存在
 // ScriptProperties）；即時剩餘只有 HTML 表格，用名稱比對接上
@@ -274,6 +275,12 @@ function buildReply(lat, lon) {
   var tokenResponse = needToken ? rest[live.length] : null;
   if (tokenResponse) getGoogleToken(tokenResponse);  // 寫進快取，後面的開車時間批次和 Places 直接取用
   var onStreetParsed = parseOnStreet(lat, lon, tdxResponses[0]);
+  // Static road data is a fallback only: no realtime data never means no legal parking.
+  // It must not replace an existing Nearby result with real stall coordinates.
+  if (city === 'NewTaipei' && !(onStreetParsed.entries || []).length) {
+    var staticRoad = findNtpcStaticRoadMatch(lat, lon);
+    if (staticRoad) onStreetParsed = { entries: [staticRoad] };
+  }
   var parkingParsed = parseParking(lat, lon, city, tdxResponses[1], tokenResponse);
   lap('解析兩段資料');
   // 兩段要問的開車時間收成一批 RPC，只多等最慢那一筆
@@ -281,6 +288,10 @@ function buildReply(lat, lon) {
     { entries: onStreetParsed.entries || [], driveCount: DRIVE_TIME_SEGMENTS },
     { entries: parkingParsed.entries || [], driveCount: DRIVE_TIME_CARPARKS }
   ]);
+  // Static road matches deliberately have no invented coordinates, so rankSections
+  // excludes them. Put the fallback back for rendering without a fake distance.
+  var staticRoadEntries = (onStreetParsed.entries || []).filter(function (e) { return e.source === 'NTPC_STATIC'; });
+  if (staticRoadEntries.length) ranked[0] = staticRoadEntries;
   lap('開車時間（一批）');
   var onStreet = onStreetParsed.error ? section(onStreetParsed.error) : renderSafely(function () { return renderOnStreet(ranked[0], getSegmentInfo(city)); });
   var parking = parkingParsed.error ? section(parkingParsed.error) : renderSafely(function () { return renderParking(ranked[1]); });
@@ -723,6 +734,62 @@ function segmentTitle(info, segId) {
 }
 
 // ========== 新北開放資料 ==========
+
+// NTPC static road rules establish legal paid roadside parking, not realtime stalls.
+// Cache the small monthly dataset in chunks; never infer an empty realtime feed means no parking.
+function getNtpcStaticRoads() {
+  var cache = CacheService.getScriptCache();
+  var cached = cacheGetChunked(cache, 'ntpc_onstreet_static');
+  if (cached) return JSON.parse(cached);
+  try {
+    var rows = ntpcFetchAllPages(NTPC_ONSTREET_STATIC) || [];
+    var roads = rows.map(normalizeNtpcStaticRoad).filter(function (r) { return r.vehicleType === 'car'; });
+    if (roads.length) cachePutChunked(cache, 'ntpc_onstreet_static', JSON.stringify(roads), 21600);
+    return roads;
+  } catch (err) {
+    Logger.log('NTPC Static 收費路段錯誤: ' + err);
+    return [];
+  }
+}
+
+function normalizeRoadName(name) {
+  var numerals = { '10': '十', '9': '九', '8': '八', '7': '七', '6': '六', '5': '五', '4': '四', '3': '三', '2': '二', '1': '一' };
+  return String(name || '').replace(/臺/g, '台').replace(/[\s　]+/g, '').replace(/(10|[1-9])(?=段)/g, function (n) { return numerals[n]; });
+}
+
+function normalizeNtpcStaticRoad(row) {
+  var area = row.area || '';
+  var road = row.road_name || '';
+  return {
+    source: 'NTPC_STATIC', roadName: road, normalizedRoadName: normalizeRoadName(road), area: area,
+    vehicleType: /機車/.test(area + road) ? 'motorcycle' : 'car', fee: row.rates || '',
+    hours: row.weekdays_time || '', staticParkingConfirmed: true, realtimeAvailable: false
+  };
+}
+
+// Exact route match only. A parent road (樟樹一路) must not imply that an alley
+// (樟樹一路139巷) is charged; therefore no startsWith / substring matching here.
+function findNtpcStaticRoadMatch(lat, lon) {
+  try {
+    var results = Maps.newGeocoder().setLanguage('zh-TW').reverseGeocode(lat, lon).results || [];
+    var comps = results.length ? results[0].address_components || [] : [];
+    var route = '', district = '';
+    comps.forEach(function (c) {
+      if (c.types.indexOf('route') >= 0) route = c.long_name || '';
+      if (c.types.indexOf('administrative_area_level_2') >= 0 || c.types.indexOf('sublocality_level_1') >= 0) district = c.long_name || district;
+    });
+    var normalized = normalizeRoadName(route);
+    var matches = getNtpcStaticRoads().filter(function (r) { return r.normalizedRoadName === normalized && (!district || r.area === district); });
+    Logger.log('NTPC Static fallback source=NTPC_STATIC rawRoadName=' + route + ' normalizedRoadName=' + normalized + ' district=' + district + ' staticMatchCount=' + matches.length);
+    if (!matches.length) return null;
+    var match = matches[0];
+    Logger.log('NTPC Static matched=' + match.roadName + ' vehicleType=' + match.vehicleType + ' excluded=false');
+    return match;
+  } catch (err) {
+    Logger.log('NTPC Static reverse geocode fallback failed: ' + err);
+    return null;
+  }
+}
 
 // TWD97 TM2（中央經線 121、k0 0.9999、東偏 250000，GRS80）→ WGS84 經緯度
 function twd97ToWgs84(x, y) {
@@ -1353,6 +1420,13 @@ function renderOnStreet(ranked, info) {
   var cards = [];
   for (var i = 0; i < displayCount; i++) {
     var entry = ranked[i];
+    if (entry.source === 'NTPC_STATIC') {
+      result += '【' + (i + 1) + '】' + entry.roadName + '\n⚪ 有路邊收費停車\n';
+      if (entry.fee) result += '💰 ' + entry.fee + '\n';
+      if (entry.hours) result += '🕒 ' + entry.hours + '\n';
+      result += '📍 所在道路\n即時空位狀態未提供\n\n';
+      continue;
+    }
     var fare = (info[entry.segId] || [])[2];
     var title = segmentTitle(info, entry.segId);
     var spots = '🅿️ 共 ' + entry.spotCount + ' 格（小客車）';
