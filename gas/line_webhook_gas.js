@@ -275,11 +275,16 @@ function buildReply(lat, lon) {
   var tokenResponse = needToken ? rest[live.length] : null;
   if (tokenResponse) getGoogleToken(tokenResponse);  // 寫進快取，後面的開車時間批次和 Places 直接取用
   var onStreetParsed = parseOnStreet(lat, lon, tdxResponses[0]);
+  var nearbyOnStreetCount = (onStreetParsed.entries || []).length;
+  Logger.log('NTPC Static acceptance nearbyOnStreetCount=' + nearbyOnStreetCount + ' nearbyRoadGroups=' + nearbyOnStreetCount + ' staticFallbackApplied=false');
   // Static road data is a fallback only: no realtime data never means no legal parking.
   // It must not replace an existing Nearby result with real stall coordinates.
   if (city === 'NewTaipei' && !(onStreetParsed.entries || []).length) {
     var staticRoad = findNtpcStaticRoadMatch(lat, lon);
-    if (staticRoad) onStreetParsed = { entries: [staticRoad] };
+    if (staticRoad) {
+      onStreetParsed = { entries: [staticRoad] };
+      Logger.log('NTPC Static acceptance staticFallbackApplied=true');
+    }
   }
   var parkingParsed = parseParking(lat, lon, city, tdxResponses[1], tokenResponse);
   lap('解析兩段資料');
@@ -743,7 +748,7 @@ function getNtpcStaticRoads() {
   if (cached) return JSON.parse(cached);
   try {
     var rows = ntpcFetchAllPages(NTPC_ONSTREET_STATIC) || [];
-    var roads = rows.map(normalizeNtpcStaticRoad).filter(function (r) { return r.vehicleType === 'car'; });
+    var roads = rows.map(normalizeNtpcStaticRoad);
     if (roads.length) cachePutChunked(cache, 'ntpc_onstreet_static', JSON.stringify(roads), 21600);
     return roads;
   } catch (err) {
@@ -776,10 +781,14 @@ function findNtpcStaticRoadMatch(lat, lon) {
     var route = '', district = '';
     comps.forEach(function (c) {
       if (c.types.indexOf('route') >= 0) route = c.long_name || '';
-      if (c.types.indexOf('administrative_area_level_2') >= 0 || c.types.indexOf('sublocality_level_1') >= 0) district = c.long_name || district;
+      // Taiwan's district is administrative_area_level_2. Do not let a city or
+      // a sublocality overwrite it: Static.area contains values such as 淡水區.
+      if (c.types.indexOf('administrative_area_level_2') >= 0) district = c.long_name || district;
     });
     var normalized = normalizeRoadName(route);
-    var matches = getNtpcStaticRoads().filter(function (r) { return r.normalizedRoadName === normalized && (!district || r.area === district); });
+    var candidates = getNtpcStaticRoads().filter(function (r) { return r.normalizedRoadName === normalized && (!district || r.area === district); });
+    candidates.forEach(function (r) { Logger.log('NTPC Static candidate source=NTPC_STATIC rawRoadName=' + r.roadName + ' normalizedRoadName=' + r.normalizedRoadName + ' vehicleType=' + r.vehicleType + ' excluded=' + (r.vehicleType !== 'car')); });
+    var matches = candidates.filter(function (r) { return r.vehicleType === 'car'; });
     Logger.log('NTPC Static fallback source=NTPC_STATIC rawRoadName=' + route + ' normalizedRoadName=' + normalized + ' district=' + district + ' staticMatchCount=' + matches.length);
     if (!matches.length) return null;
     var match = matches[0];
