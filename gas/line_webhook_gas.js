@@ -64,7 +64,8 @@ var KLCG_LIVE_STALE_MS = 24 * 60 * 60 * 1000
 var GEOCODE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 var SEARCH_RADIUS_KM = 1.0
 // TDX NearBy 回的是靜態基本資料（沒有剩餘位），按位置格子快取 6h 省進階 API 點數：
-// 格子取小數 3 位（約 110m），查詢用格子中心、半徑多加 NEARBY_GRID_PAD_KM 吃掉偏移，
+// 格子取小數 3 位（約 110m）。TDX NearBy 的搜尋半徑上限是 1,000m，
+// 因此即使為了格子中心偏移預留 NEARBY_GRID_PAD_KM，實際送出的半徑也必須限制在 1,000m；
 // 回來再用使用者真實座標過濾半徑並取最近 N 筆，結果與直接查一樣
 var NEARBY_CACHE_SECONDS = 21600
 var NEARBY_CACHE_MAX_CHARS = 30000   // CacheService 單筆 100KB；全中文也不會超過
@@ -456,6 +457,7 @@ function tdxFetch(url) {
     // muteHttpExceptions 只管 HTTP 狀態碼；連線層例外（DNS、配額）仍會丟，一樣換下一把
     var response;
     try {
+      logTDXRequest(url);
       response = UrlFetchApp.fetch(url, {
         method: 'get',
         headers: { 'authorization': 'Bearer ' + token },
@@ -468,12 +470,31 @@ function tdxFetch(url) {
     }
     // 429 是頻率上限，401/403 是金鑰失效，兩者都該換下一把而不是把錯誤丟回呼叫端
     var code = response.getResponseCode();
+    logTDXResponse(url, response);
     if (code !== 429 && code !== 401 && code !== 403) return response;
     Logger.log('金鑰 ' + keyIndex + ' 回應 ' + code + '，換下一把');
     markTDXKeyExhausted(keyIndex);
   }
   Logger.log('所有 TDX 金鑰本分鐘已用滿');
   return { getResponseCode: function () { return 429; }, getContentText: function () { return ''; } };
+}
+
+// TDX 診斷紀錄：URL 不含 Authorization header，因此不會寫入 access token、client id 或 client secret。
+// 回應本文只保留前 2,000 字，足以看見 TDX 的 4xx 錯誤說明，也避免執行紀錄被正常資料淹沒。
+function tdxEndpointName(url) {
+  if (url.indexOf('/Parking/OnStreet/ParkingSpot/NearBy') >= 0) return 'OnStreet ParkingSpot NearBy';
+  if (url.indexOf('/Parking/OffStreet/CarPark/NearBy') >= 0) return 'OffStreet CarPark NearBy';
+  return 'TDX request';
+}
+
+function logTDXRequest(url) {
+  Logger.log('TDX request [' + tdxEndpointName(url) + ']: ' + url);
+}
+
+function logTDXResponse(url, response) {
+  var status = response ? response.getResponseCode() : 0;
+  var body = response ? response.getContentText() : '';
+  Logger.log('TDX response [' + tdxEndpointName(url) + '] status=' + status + ' body=' + body.slice(0, 2000));
 }
 
 // 同時發出多個請求；整批丟例外時退回逐一發送，單一請求失敗回 null
@@ -505,7 +526,9 @@ function nearbyGrid(lat, lon) {
 function nearbyCached(lat, lon) {
   var g = nearbyGrid(lat, lon);
   var suffix = g.lat.toFixed(NEARBY_GRID_DECIMALS) + '_' + g.lon.toFixed(NEARBY_GRID_DECIMALS);
-  var radiusM = Math.round((SEARCH_RADIUS_KM + NEARBY_GRID_PAD_KM) * 1000);
+  // TDX Nearby 文件規定搜尋半徑最大 1,000m；舊版在 1km 查詢再加 100m 後送 1,100m，會得到 HTTP 400。
+  var radiusM = Math.min(1000, Math.round((SEARCH_RADIUS_KM + NEARBY_GRID_PAD_KM) * 1000));
+  Logger.log('TDX NearBy coordinates: lat=' + lat + ', lng=' + lon + '; gridLat=' + g.lat + ', gridLng=' + g.lon + '; radiusM=' + radiusM);
   // 鍵帶半徑與筆數：改設定後舊快取自然失效，不會讀到較小的候選集合
   var keys = ['nearby_spot_' + radiusM + '_' + ONSTREET_FETCH + '_' + suffix, 'nearby_park_' + radiusM + '_' + CARPARK_FETCH + '_' + suffix];
   var filter = encodeURIComponent('nearby(' + g.lat + ',' + g.lon + ',' + radiusM + ')');
@@ -571,11 +594,15 @@ function tdxFetchAll(urls, extraRequests) {
     var token = keyIndexes[i] >= 0 ? getTDXToken(keyIndexes[i]) : null;
     if (!token) return;
     slots.push(i);
+    logTDXRequest(url);
     requests.push({ url: url, method: 'get', headers: { 'authorization': 'Bearer ' + token }, muteHttpExceptions: true });
   });
   var batch = requests.length + extraRequests.length ? fetchAllSafe(requests.concat(extraRequests)) : [];
   var responses = [];
-  slots.forEach(function (i, n) { responses[i] = batch[n]; });
+  slots.forEach(function (i, n) {
+    responses[i] = batch[n];
+    logTDXResponse(urls[i], responses[i]);
+  });
   var tdxResponses = urls.map(function (url, i) {
     var code = responses[i] ? responses[i].getResponseCode() : 0;
     if (code && code !== 429 && code !== 401 && code !== 403) return responses[i];
