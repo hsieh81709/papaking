@@ -164,14 +164,20 @@ function doPost(e) {
       var event = events[i];
       if (event.type !== 'message' || !event.message) continue;
       var isIdCommand = event.message.type === 'text' && /^id$/i.test((event.message.text || '').trim());
-      if (!isIdCommand && event.message.type !== 'location') continue;
+      var parkIntent = event.message.type === 'text' && typeof parkIntentFromText_ === 'function' ? parkIntentFromText_(event.message.text) : null;
+      if (!isIdCommand && !parkIntent && event.message.type !== 'location') continue;
       // 一個事件失敗（回覆逾時、payload 異常）不能把同批其他使用者的事件一起帶掉
       try {
         if (isIdCommand) {
           // 「id」只在一對一聊天回，群組裡回會把 userId 秀給整個群組
           if (event.source && event.source.type === 'user' && event.source.userId) replyLine(event.replyToken, 'LINE userId：' + event.source.userId);
+        } else if (parkIntent) {
+          if (rememberParkIntent_(event.source || {}, parkIntent)) replyLine(event.replyToken, '🌳 請傳送 LINE「位置資訊」，我會搜尋附近符合條件的公園（3 公里內）。');
+          else replyLine(event.replyToken, '請在一對一聊天室使用公園搜尋，才能安全保存本次查詢條件。');
         } else {
-          handleLocation(event);
+          var requestedPark = typeof takeParkIntent_ === 'function' ? takeParkIntent_(event.source || {}) : null;
+          if (requestedPark) replyLine(event.replyToken, buildParkReply_(event.message.latitude, event.message.longitude, requestedPark));
+          else handleLocation(event);
         }
       } catch (err) {
         Logger.log('事件 ' + i + ' 處理失敗: ' + err);
