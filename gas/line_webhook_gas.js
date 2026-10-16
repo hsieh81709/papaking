@@ -216,7 +216,7 @@ function doPost(e) {
           if (requestedPark) {
             replyLine(
               event.replyToken,
-              buildParkReply_(
+              buildParkFlexReply_(
                 event.message.latitude,
                 event.message.longitude,
                 requestedPark
