@@ -1,7 +1,7 @@
 /**
  * LINE Webhook for Google Apps Script
  * 全台停車資訊查詢
- * @version 0.2.1
+ * @version 0.3.0
  */
 
 // ========== 設定區 ==========
@@ -145,16 +145,17 @@ var TDX_CITY = {
 
 // ========== LINE Webhook ==========
 
+
 function doPost(e) {
   try {
     if (!e || !e.postData) {
-      return ContentService.createTextOutput('Invalid request').setMimeType(ContentService.MimeType.TEXT);
+      return ContentService.createTextOutput('Invalid request')
+        .setMimeType(ContentService.MimeType.TEXT);
     }
 
     var data = JSON.parse(e.postData.contents);
     var events = data.events || [];
 
-    // 端點無法驗證來源，事件數設上限避免單一請求把配額打光
     if (events.length > MAX_EVENTS) {
       Logger.log('事件數 ' + events.length + ' 超過上限，只處理前 ' + MAX_EVENTS + ' 筆');
       events = events.slice(0, MAX_EVENTS);
@@ -163,33 +164,86 @@ function doPost(e) {
     for (var i = 0; i < events.length; i++) {
       var event = events[i];
       if (event.type !== 'message' || !event.message) continue;
-      var isIdCommand = event.message.type === 'text' && /^id$/i.test((event.message.text || '').trim());
-      var parkIntent = event.message.type === 'text' && typeof parkIntentFromText_ === 'function' ? parkIntentFromText_(event.message.text) : null;
-      if (!isIdCommand && !parkIntent && event.message.type !== 'location') continue;
-      // 一個事件失敗（回覆逾時、payload 異常）不能把同批其他使用者的事件一起帶掉
+
+      var isIdCommand =
+        event.message.type === 'text' &&
+        /^id$/i.test((event.message.text || '').trim());
+
+      var parkIntent =
+        event.message.type === 'text' &&
+        typeof parkIntentFromText_ === 'function'
+          ? parkIntentFromText_(event.message.text)
+          : null;
+
+      if (!isIdCommand && !parkIntent &&
+          event.message.type !== 'location') {
+        continue;
+      }
+
       try {
         if (isIdCommand) {
-          // 「id」只在一對一聊天回，群組裡回會把 userId 秀給整個群組
-          if (event.source && event.source.type === 'user' && event.source.userId) replyLine(event.replyToken, 'LINE userId：' + event.source.userId);
+
+          if (event.source &&
+              event.source.type === 'user' &&
+              event.source.userId) {
+            replyLine(
+              event.replyToken,
+              'LINE userId：' + event.source.userId
+            );
+          }
+
         } else if (parkIntent) {
-          if (rememberParkIntent_(event.source || {}, parkIntent)) replyLine(event.replyToken, '🌳 請傳送 LINE「位置資訊」，我會搜尋附近符合條件的公園（3 公里內）。');
-          else replyLine(event.replyToken, '請在一對一聊天室使用公園搜尋，才能安全保存本次查詢條件。');
+
+          if (rememberParkIntent_(event.source || {}, parkIntent)) {
+            replyLine(
+              event.replyToken,
+              '🌳 請傳送 LINE「位置資訊」，我會搜尋附近符合條件的公園（3 公里內）。'
+            );
+          } else {
+            replyLine(
+              event.replyToken,
+              '請在一對一聊天室使用公園搜尋，才能安全保存本次查詢條件。'
+            );
+          }
+
         } else {
-          var requestedPark = typeof takeParkIntent_ === 'function' ? takeParkIntent_(event.source || {}) : null;
-          if (requestedPark) replyLine(event.replyToken, buildParkReply_(event.message.latitude, event.message.longitude, requestedPark));
-          else handleLocation(event);
+
+          var requestedPark =
+            typeof takeParkIntent_ === 'function'
+              ? takeParkIntent_(event.source || {})
+              : null;
+
+          if (requestedPark) {
+            replyLine(
+              event.replyToken,
+              buildParkReply_(
+                event.message.latitude,
+                event.message.longitude,
+                requestedPark
+              )
+            );
+          } else {
+            handleLocation(event);
+          }
+
         }
+
       } catch (err) {
         Logger.log('事件 ' + i + ' 處理失敗: ' + err);
       }
     }
 
-    return ContentService.createTextOutput('OK').setMimeType(ContentService.MimeType.TEXT);
+    return ContentService.createTextOutput('OK')
+      .setMimeType(ContentService.MimeType.TEXT);
+
   } catch (err) {
     Logger.log('doPost error: ' + err);
-    return ContentService.createTextOutput('Error').setMimeType(ContentService.MimeType.TEXT);
+
+    return ContentService.createTextOutput('Error')
+      .setMimeType(ContentService.MimeType.TEXT);
   }
 }
+
 
 // 使用者的座標不寫進執行記錄，也不存任何地方
 function handleLocation(event) {
