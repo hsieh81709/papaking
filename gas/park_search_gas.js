@@ -160,3 +160,56 @@ function testPapaKingRouting() {
   Logger.log('PASS 公園查詢完成後恢復停車模式');
   Logger.log('========== 分流測試完成 ==========');
 }
+
+/** V0.3.1 公園搜尋 Flex Carousel；既有文字版仍作為備援。 */
+function buildParkFlexReply_(lat, lon, intent) {
+  if (!isFinite(lat) || !isFinite(lon) || lat < 21 || lat > 26 || lon < 119 || lon > 123) {
+    return buildParkReply_(lat, lon, intent);
+  }
+  var parks = parkSearch_(lat, lon, intent);
+  if (!parks.length) return buildParkReply_(lat, lon, intent);
+  var cards = parks.map(function(p) {
+    var facilities = (p.tags || []).filter(Boolean).join('、');
+    var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.lat + ',' + p.lon);
+    return {
+      type: 'bubble',
+      body: {
+        type: 'box', layout: 'vertical', spacing: 'md',
+        contents: [
+          { type: 'text', text: p.name || '未命名公園', weight: 'bold', size: 'lg', wrap: true },
+          { type: 'text', text: [p.city, p.district].filter(Boolean).join(' ') || '行政區未提供', size: 'sm', color: '#666666', wrap: true },
+          { type: 'text', text: '距離約 ' + Math.round(p.km * 1000) + ' 公尺（直線）', size: 'md', weight: 'bold', color: '#227A4C' },
+          { type: 'text', text: facilities ? '設施：' + facilities : '設施資訊待確認', size: 'sm', color: '#555555', wrap: true },
+          { type: 'text', text: '設施資訊未經現場查核', size: 'xs', color: '#888888', wrap: true }
+        ]
+      },
+      footer: {
+        type: 'box', layout: 'vertical',
+        contents: [{ type: 'button', style: 'primary', color: '#227A4C',
+          action: { type: 'uri', label: '開啟 Google 地圖', uri: mapUrl } }]
+      }
+    };
+  });
+  return {
+    type: 'flex',
+    altText: '附近公園搜尋：找到 ' + cards.length + ' 筆，請滑動查看。',
+    contents: { type: 'carousel', contents: cards }
+  };
+}
+
+function testPapaKingParkFlex_() {
+  ['全部', '溜滑梯', '鞦韆', '共融'].forEach(function(intent) {
+    var result = buildParkFlexReply_(25.136165, 121.50155, intent);
+    if (typeof result === 'string') {
+      if (!result) throw new Error('空白文字備援：' + intent);
+      Logger.log('PASS 文字備援：' + intent);
+      return;
+    }
+    if (result.type !== 'flex' || result.contents.type !== 'carousel') throw new Error('Flex 結構異常：' + intent);
+    if (!result.contents.contents.length || result.contents.contents.length > PARK_TOP_N) throw new Error('卡片數量異常：' + intent);
+    result.contents.contents.forEach(function(card) {
+      if (card.footer.contents[0].action.uri.indexOf('https://www.google.com/maps/search/') !== 0) throw new Error('地圖連結異常');
+    });
+    Logger.log('PASS Flex：' + intent + '，卡片 ' + result.contents.contents.length + ' 張');
+  });
+}
