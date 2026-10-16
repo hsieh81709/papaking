@@ -146,6 +146,35 @@ var TDX_CITY = {
 // ========== LINE Webhook ==========
 
 
+/** V0.3.1 LINE Quick Reply：使用者輸入「選單」時顯示。 */
+function buildPapaKingQuickMenu_() {
+  var choices = [
+    ['附近公園', '附近公園'],
+    ['溜滑梯', '附近有溜滑梯的公園'],
+    ['鞦韆', '附近有鞦韆的公園'],
+    ['共融遊戲場', '附近共融遊戲場']
+  ];
+  return {
+    type: 'text',
+    text: '請選擇公園搜尋類型，或直接分享位置查詢停車資訊。',
+    quickReply: { items: choices.map(function(pair) {
+      return { type: 'action', action: { type: 'message', label: pair[0], text: pair[1] } };
+    }).concat([{ type: 'action', action: { type: 'location', label: '停車／分享位置' } }]) }
+  };
+}
+
+/** 公園條件已保存時，提供直接分享位置的快捷鍵。 */
+function buildPapaKingLocationPrompt_() {
+  return {
+    type: 'text',
+    text: '🌳 請點選下方「分享位置」，搜尋附近符合條件的公園（3 公里內）。',
+    quickReply: { items: [
+      { type: 'action', action: { type: 'location', label: '分享位置' } },
+      { type: 'action', action: { type: 'message', label: '重新選擇', text: '選單' } }
+    ] }
+  };
+}
+
 function doPost(e) {
   try {
     if (!e || !e.postData) {
@@ -175,7 +204,11 @@ function doPost(e) {
           ? parkIntentFromText_(event.message.text)
           : null;
 
-      if (!isIdCommand && !parkIntent &&
+      var isMenuCommand =
+        event.message.type === 'text' &&
+        /^(選單|功能選單|公園選單|menu)$/i.test((event.message.text || '').trim());
+
+      if (!isIdCommand && !parkIntent && !isMenuCommand &&
           event.message.type !== 'location') {
         continue;
       }
@@ -192,12 +225,15 @@ function doPost(e) {
             );
           }
 
+        } else if (isMenuCommand) {
+          replyLine(event.replyToken, buildPapaKingQuickMenu_());
+
         } else if (parkIntent) {
 
           if (rememberParkIntent_(event.source || {}, parkIntent)) {
             replyLine(
               event.replyToken,
-              '🌳 請傳送 LINE「位置資訊」，我會搜尋附近符合條件的公園（3 公里內）。'
+              buildPapaKingLocationPrompt_()
             );
           } else {
             replyLine(
