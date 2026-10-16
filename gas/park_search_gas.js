@@ -67,7 +67,7 @@ function parkSearch_(lat,lon,intent) {
     var a=Number(p['緯度']),b=Number(p['經度']);
     if (!a||!b||a<21||a>26||b<119||b>123||String(p['資料狀態'])!=='可用') return null;
     var id=String(p['公園ID']||'');
-    if (intent==='共融' && types[id].indexOf('共融')<0) return null;
+    if (intent==='共融' && (types[id]||'').indexOf('共融')<0) return null;
     if ((intent==='鞦韆'||intent==='溜滑梯') && (tags[id]||[]).indexOf(intent)<0) return null;
     var dist=parkDistanceKm_(lat,lon,a,b);
     if (dist>PARK_RADIUS_KM) return null;
