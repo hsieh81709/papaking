@@ -9,7 +9,8 @@ import { fileURLToPath } from 'node:url';
 const [input, output] = process.argv.slice(2);
 if (!input || !output) throw new Error('Usage: node tools/park-audit.mjs INPUT.json NEW_REPORT.json');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const data = JSON.parse(fs.readFileSync(input, 'utf8'));
+const inputBytes=fs.readFileSync(input);
+const data = JSON.parse(inputBytes.toString('utf8'));
 const required = {
   parks: ['公園ID','縣市','行政區','公園名稱','地址','緯度','經度','資料狀態'],
   candidates: ['公園ID','候選緯度','候選經度','Google回傳地址','定位類型','審核狀態'],
@@ -26,7 +27,7 @@ for (const file of ['park_geocoding_gas.js','park_b45_sync_gas.js']) vm.runInCon
 const scope=context.parkAuditNewTaipeiScope_(data.parks,data.candidates,data.facilities,null);
 const report = context.parkAuditData_(scope.parks, scope.candidates, scope.facilities);
 report.scopeSelection=scope.selection;
-report.evidence = {source:'user-supplied offline export; not a live Sheets verification', generatedAt:new Date().toISOString()};
+report.evidence = {source:'user-supplied offline export; not a live Sheets verification', generatedAt:new Date().toISOString(), inputJsonSha256:crypto.createHash('sha256').update(inputBytes).digest('hex'), exportEvidence:data.exportEvidence||null};
 // No approval list is inferred from grading; reject an ambiguous/invalid review schema.
 if (data.reviews !== undefined) {
   if (!Array.isArray(data.reviews)) throw new Error('reviews must be an array');

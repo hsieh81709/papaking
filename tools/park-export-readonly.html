@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PapaKing 公園資料唯讀匯出</title>
+<style>body{font:17px/1.7 system-ui;max-width:740px;margin:48px auto;padding:0 20px;color:#193b2d}input,button{font:inherit;padding:12px;box-sizing:border-box;width:100%;margin:8px 0}button{background:#227a4c;color:white;border:0;border-radius:6px;cursor:pointer}small{color:#555}#error{color:#a00}</style>
+<h1>一次下載公園資料</h1>
+<p>貼上含「公園資料」「公園座標候選」「公園設施」「公園座標品質檢核」的 <b>Google 試算表網址</b>。按下按鈕後，Google 會以你瀏覽器的帳號下載整本 Excel 檔；需要時直接在 Google 網頁登入。</p>
+<form id="export-form"><label for="sheet-url">Google Sheets 網址（不是 Apps Script 指令碼 ID）</label><input id="sheet-url" type="url" required placeholder="https://docs.google.com/spreadsheets/d/…/edit" autocomplete="off"><button type="submit">從 Google 唯讀下載 .xlsx</button><p id="error" role="alert"></p></form>
+<p>下載完成後，把 <b>.xlsx 檔案附加到原本的 Codex 對話</b>。不需執行 GAS 函式、不需提供 Token，也不會更改儲存格、部署或 Webhook。</p>
+<small>這是本機工具，沒有追蹤或外部腳本。按鈕只前往 docs.google.com 的原生匯出網址。整本匯出可能包含其他分頁；若有不應分享的個資，請先在本機副本中只保留上述四頁，保留所有公園列與原欄位後再附加。不要刪改正式試算表。</small>
+<script>
+function parkWorkbookExportUrl(input) {
+  const url=new URL(input);
+  const match=url.pathname.match(/^\/spreadsheets\/(?:u\/\d+\/)?d\/([A-Za-z0-9_-]{20,100})(?:\/|$)/);
+  if(url.protocol!=='https:' || url.hostname!=='docs.google.com' || url.port || url.username || url.password || !match) throw new Error('請貼上完整 Google Sheets 網址。Apps Script ID 無法用來匯出試算表。');
+  return 'https://docs.google.com/spreadsheets/d/'+match[1]+'/export?format=xlsx';
+}
+document.getElementById('export-form').addEventListener('submit',function(event) {
+  event.preventDefault();
+  try { const target=parkWorkbookExportUrl(document.getElementById('sheet-url').value.trim());document.getElementById('error').textContent='';window.location.assign(target); }
+  catch(error) { document.getElementById('error').textContent=error.message; }
+});
+</script></html>

@@ -86,6 +86,7 @@ function parkAuditData_(parks, candidates, facilities) {
       if (delta > 100) warnings.push('候選與正式座標差距超過100公尺');
     }
     return { id: id, candidateRow: c.__sheetRow || index + 2, name: parkAuditText_(p && p['公園名稱']),
+      officialAddress:parkAuditText_(p && p['地址']),officialDistrict:parkAuditText_(p && p['行政區']),googleFormattedAddress:parkAuditText_(c['Google回傳地址']),officialSourceUrl:parkAuditText_(p && p['來源網址']),
       grade: severe.length ? 'C' : warnings.length ? 'B' : 'A', reasons: severe.length || warnings.length ? severe.concat(warnings) : ['格式、ID與地址交叉檢查通過；仍需人工比對公園入口'],
       candidateValid: valid, locationType: type, reviewStatus: parkAuditText_(c['審核狀態']),
       formallyApproved: false, distanceFromOfficialMeters: delta,

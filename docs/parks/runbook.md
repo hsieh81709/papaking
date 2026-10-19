@@ -74,3 +74,7 @@ node tools/park-audit.mjs .local/park-export.json .local/park-report.json
 回復只接受目前值等於記錄的 before 或 after，且 ID 列位置未改動。第三方新值、公式、排序移列、缺少備份、損毀日誌或過期預覽都會阻擋，避免覆蓋別人的修正；需人工比對整表備份並另外核准修復。副本／正式表的存取失效或配額耗盡也可能使回復失敗，需保留所有證據。
 
 本工具不建立觸發器、不排程自動同步，也不更新正式 LINE Webhook。
+
+## 一次提供真實資料（後續更新）
+
+若沒有 Google 帳號連線，最簡單方式是從 Google Sheets 原生下載一次整本 `.xlsx` 並附加到 Codex；不需要逐一執行 GAS 函式。詳見 [一次匯出與代理接續流程](export-handoff.md)。本次環境網路已可到達 Sheets API，但仍沒有可用帳號授權；先前驗收記錄中的代理 403 為當時觀測。

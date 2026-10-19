@@ -4,3 +4,6 @@
 
 # Private park exports and generated audit reports
 .local/
+
+# Python exporter bytecode
+tools/__pycache__/
