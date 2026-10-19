@@ -1,8 +1,7 @@
 /**
  * PapaKing 雙北公園查詢 MVP (GAS)
  * 資料庫使用現有「公園資料」「公園設施」分頁。
- * 指令碼屬性：PARK_SHEET_ID = 17nfC94YMVlHyC8dvWF67nwfd6a_uFr46gHY-F_PbjvY
- * 目前新北公園無座標，暫不參與距離搜尋。
+ * 指令碼屬性：PARK_SHEET_ID。只有「可用」且座標有效的公園參與搜尋。
  */
 var PARK_RADIUS_KM = 3;
 var PARK_TOP_N = 5;
@@ -18,7 +17,10 @@ function parkIntentFromText_(text) {
 }
 
 function parkIntentKey_(source) {
-  var id = source.userId || (source.type === 'group' ? source.groupId : '') || (source.type === 'room' ? source.roomId : '');
+  source = source || {};
+  // Include conversation scope so a user's group search cannot leak into their DM.
+  var conversation = source.type === 'group' ? source.groupId : source.type === 'room' ? source.roomId : 'direct';
+  var id = source.userId && conversation ? source.type + ':' + conversation + ':' + source.userId : '';
   if (!id) return null;
   var bytes = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, id, Utilities.Charset.UTF_8);
   return 'park_intent_' + bytes.map(function(b){return ('0'+(b&255).toString(16)).slice(-2);}).join('').slice(0,32);
@@ -38,50 +40,68 @@ function takeParkIntent_(source) {
   if (intent) cache.remove(key);
   return intent;
 }
+function parkSearchCoordinate_(lat,lon) {
+  function number(v) {
+    return (typeof v==='number' || typeof v==='string' && /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(v.trim())) && isFinite(Number(v));
+  }
+  return number(lat)&&number(lon)&&Number(lat)>=21&&Number(lat)<=26&&Number(lon)>=119&&Number(lon)<=123;
+}
 function parkDistanceKm_(a,b,c,d) {
   var r=Math.PI/180, x=(c-a)*r, y=(d-b)*r;
   var h=Math.sin(x/2)*Math.sin(x/2)+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)*Math.sin(y/2);
+  h=Math.min(1,Math.max(0,h));
   return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
-function parkRowsAsObjects_(sheet) {
+function parkRowsAsObjects_(sheet, required) {
   var rows=sheet.getDataRange().getValues();
   if (!rows.length) return [];
-  var headers=rows.shift().map(String);
+  var headers=rows.shift().map(function(h){return String(h).trim();});
+  if (headers.some(function(h,i){return !h||headers.indexOf(h)!==i;})) throw new Error('公園資料欄位空白或重複');
+  (required||[]).forEach(function(h){if(headers.indexOf(h)<0) throw new Error('公園分頁缺少欄位：'+h);});
   return rows.map(function(row){var o={};headers.forEach(function(h,i){o[h]=row[i];});return o;});
 }
 function parkSearch_(lat,lon,intent) {
+  if (!parkSearchCoordinate_(lat,lon)) return [];
+  lat=Number(lat); lon=Number(lon);
   var sheetId=PropertiesService.getScriptProperties().getProperty('PARK_SHEET_ID');
   if (!sheetId) throw new Error('請先設定 PARK_SHEET_ID 指令碼屬性');
   var ss=SpreadsheetApp.openById(sheetId);
   var ps=ss.getSheetByName('公園資料'),fs=ss.getSheetByName('公園設施');
   if (!ps||!fs) throw new Error('公園資料或公園設施分頁不存在');
-  var tags={},types={};
-  parkRowsAsObjects_(fs).forEach(function(f){
-    var id=String(f['公園ID']||'');
+  var tags=Object.create(null),types=Object.create(null);
+  var parks=parkRowsAsObjects_(ps,['公園ID','公園名稱','縣市','行政區','緯度','經度','資料狀態']), counts=Object.create(null);
+  parks.forEach(function(p){var id=String(p['公園ID']||'').trim();counts[id]=(counts[id]||0)+1;});
+  parkRowsAsObjects_(fs,['公園ID','可查詢遊具類別（依休憩設施）','遊戲場名稱']).forEach(function(f){
+    var id=String(f['公園ID']||'').trim();
     if (!id) return;
     // 僅用「可查詢遊具類別」；禁止用疑似串接的「其他設施」判斷
-    tags[id]=String(f['可查詢遊具類別（依休憩設施）']||'').split('、');
-    types[id]=String(f['遊戲場名稱']||'');
+    var extra=String(f['可查詢遊具類別（依休憩設施）']||'').split(/[、，,；;]/).map(function(v){return v.trim();}).filter(Boolean);
+    tags[id]=(tags[id]||[]).concat(extra).filter(function(v,i,a){return a.indexOf(v)===i;});
+    var playground=String(f['遊戲場名稱']||'').replace(/\s/g,'');
+    types[id]=Boolean(types[id] || /共融/.test(playground) && !/(?:非|無|未設置|不是|不屬於)共融/.test(playground));
   });
-  return parkRowsAsObjects_(ps).map(function(p){
+  return parks.map(function(p){
     var a=Number(p['緯度']),b=Number(p['經度']);
-    if (!a||!b||a<21||a>26||b<119||b>123||String(p['資料狀態'])!=='可用') return null;
-    var id=String(p['公園ID']||'');
-    if (intent==='共融' && (types[id]||'').indexOf('共融')<0) return null;
+    if (!parkSearchCoordinate_(p['緯度'],p['經度'])||String(p['資料狀態'])!=='可用') return null;
+    var id=String(p['公園ID']||'').trim();
+    if (!id || counts[id]!==1) return null;
+    if (intent==='共融' && !types[id]) return null;
     if ((intent==='鞦韆'||intent==='溜滑梯') && (tags[id]||[]).indexOf(intent)<0) return null;
     var dist=parkDistanceKm_(lat,lon,a,b);
-    if (dist>PARK_RADIUS_KM) return null;
+    // One micrometre tolerance absorbs floating point error at the exact boundary.
+    if (dist>PARK_RADIUS_KM+1e-9) return null;
+    dist=Math.min(dist,PARK_RADIUS_KM);
     return {name:String(p['公園名稱']||''),city:String(p['縣市']||''),district:String(p['行政區']||''),lat:a,lon:b,km:dist,tags:tags[id]||[],id:id};
-  }).filter(Boolean).sort(function(a,b){return a.km-b.km;}).slice(0,PARK_TOP_N);
+  }).filter(Boolean).sort(function(a,b){return a.km-b.km || a.id.localeCompare(b.id);}).slice(0,PARK_TOP_N);
 }
 function buildParkReply_(lat,lon,intent) {
-  if (!isFinite(lat)||!isFinite(lon)||lat<21||lat>26||lon<119||lon>123) return '位置座標異常，請重新分享台灣的位置。';
+  if (!parkSearchCoordinate_(lat,lon)) return '位置座標異常，請重新分享台灣的位置。';
   var list=parkSearch_(lat,lon,intent);
   var head='🌳 附近'+(intent==='全部'?'公園':intent==='共融'?'共融遊戲場':'有'+intent+'的公園')+'（'+PARK_RADIUS_KM+' 公里內）';
-  if (!list.length) return head+'\n目前沒有符合條件且已定位的資料。新北市公園仍待補座標；遊具搜尋僅依官方休憩設施欄位，可能漏列。';
+  if (!list.length) return head+'\n目前沒有符合條件且已定位的資料。尚未完成座標審核的公園不列入搜尋；遊具搜尋僅依官方休憩設施欄位，可能漏列。';
   return head+'\n'+list.map(function(p,i){
     return (i+1)+'. '+p.name+'（'+p.district+'）\n距離約 '+Math.round(p.km*1000)+' 公尺'+(p.tags.filter(Boolean).length?'｜設施：'+p.tags.filter(Boolean).join('、'):'')+'\n地圖：https://www.google.com/maps/search/?api=1&query='+p.lat+','+p.lon;
-  }).join('\n\n')+'\n\n※ 直線距離；設施資訊未經現場查核，新北市尚未納入定位搜尋。';
+  }).join('\n\n')+'\n\n※ 直線距離；設施資訊未經現場查核；僅顯示狀態可用且有有效座標的公園。';
 }
 function testParkSearch_() {
   Logger.log(buildParkReply_(25.136165,121.50155,'全部'));
@@ -163,7 +183,7 @@ function testPapaKingRouting() {
 
 /** V0.3.1 公園搜尋 Flex Carousel；既有文字版仍作為備援。 */
 function buildParkFlexReply_(lat, lon, intent) {
-  if (!isFinite(lat) || !isFinite(lon) || lat < 21 || lat > 26 || lon < 119 || lon > 123) {
+  if (!parkSearchCoordinate_(lat,lon)) {
     return buildParkReply_(lat, lon, intent);
   }
   var parks = parkSearch_(lat, lon, intent);

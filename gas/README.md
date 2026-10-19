@@ -73,3 +73,10 @@ testNearbyCache()  // 同一座標查兩次，第二次 TDX 應命中格子快�
 
 完整部署指南與技術說明：
 https://www.notion.so/2a37a24cf64081dcbc11c8948ad10337
+
+## 公園座標品質與同步驗證
+
+離線測試：在專案根目錄執行 `node --test test/parks/*.test.mjs`。
+品質分級與唯讀工具、安全同步／備份／回復步驟見 [操作指引](../docs/parks/runbook.md)；
+正式資料存取限制、版本盤點與實際驗收結果見 [驗收紀錄](../docs/parks/acceptance.md)。
+B4-3 現在預設為唯讀預覽；B4-5 正式同步必須傳入本次使用者明確確認的 ID 與預覽 fingerprint。
