@@ -422,33 +422,59 @@ function renderSafely(render) {
   }
 }
 
-// 一張卡：{ kind, title, lines, lat, lon }。Flex 的 text 元件不能是空字串，lines 進來前就過濾掉
+// PapaKing V2: shared information-first Flex card; color is determined by service.
+var PAPAKING_FLEX_THEMES = {
+  parking: { color: '#1976D2', light: '#E3F2FD' },
+  park: { color: '#43A047', light: '#E8F5E9' },
+  toilet: { color: '#00838F', light: '#E0F7FA' }
+};
+function papaKingFlexTheme_(kind) {
+  var service = kind === '公園' ? 'park' : kind === '公廁' ? 'toilet' : 'parking';
+  return PAPAKING_FLEX_THEMES[service];
+}
+function papaKingMapUrl_(lat, lon) {
+  return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(lat + ',' + lon);
+}
+// Card input remains { kind, title, lines, lat, lon } for compatibility.
 function flexBubble(card) {
-  var color = FLEX_COLORS[card.kind] || '#546E7A';
-  var lines = card.lines.filter(function (line) { return line; }).slice(0, 6);
-  return {
+  var theme = papaKingFlexTheme_(card.kind);
+  var lines = (card.lines || []).filter(function (line) { return line; }).slice(0, 6);
+  var hasCoordinates = isFinite(Number(card.lat)) && isFinite(Number(card.lon)) &&
+    card.lat !== null && card.lon !== null && card.lat !== '' && card.lon !== '';
+  var footerButtons = hasCoordinates ? [
+    { type: 'button', style: 'secondary', height: 'sm',
+      action: { type: 'uri', label: '查看地圖', uri: papaKingMapUrl_(card.lat, card.lon) } },
+    { type: 'button', style: 'primary', height: 'sm', color: theme.color,
+      action: { type: 'uri', label: '開始導航', uri: navUrl(card.lat, card.lon) } }
+  ] : [];
+  var bubble = {
     type: 'bubble',
     size: 'kilo',
     header: {
-      type: 'box', layout: 'vertical', backgroundColor: color, paddingAll: '8px',
-      contents: [{ type: 'text', text: card.kind, color: '#FFFFFF', size: 'xs', weight: 'bold' }]
+      type: 'box', layout: 'vertical', backgroundColor: theme.color, paddingAll: '10px',
+      contents: [{ type: 'text', text: String(card.kind || '附近地點'), color: '#FFFFFF', size: 'sm', weight: 'bold' }]
     },
     body: {
-      type: 'box', layout: 'vertical', spacing: 'xs', paddingAll: '12px',
-      contents: [{ type: 'text', text: card.title.slice(0, 60), weight: 'bold', size: 'sm', wrap: true }].concat(
-        lines.map(function (line) { return { type: 'text', text: line.slice(0, 80), size: 'xs', color: '#666666', wrap: true }; })
-      )
-    },
-    footer: {
-      type: 'box', layout: 'vertical', paddingAll: '8px',
-      contents: [{
-        type: 'button', style: 'primary', height: 'sm', color: color,
-        action: { type: 'uri', label: '開車導航', uri: navUrl(card.lat, card.lon) }
-      }]
+      type: 'box', layout: 'vertical', spacing: 'sm', paddingAll: '12px',
+      backgroundColor: '#FFFFFF',
+      contents: [
+        { type: 'text', text: String(card.title || '未命名地點').slice(0, 60),
+          weight: 'bold', size: 'md', color: '#183153', wrap: true },
+        { type: 'separator', color: theme.light, margin: 'sm' }
+      ].concat(lines.map(function (line) {
+        return { type: 'text', text: String(line).slice(0, 80),
+          size: 'xs', color: '#455A64', wrap: true };
+      }))
     }
   };
+  if (footerButtons.length) {
+    bubble.footer = {
+      type: 'box', layout: 'vertical', spacing: 'xs', paddingAll: '10px',
+      contents: footerButtons
+    };
+  }
+  return bubble;
 }
-
 function buildFlexCarousel(cards) {
   return {
     type: 'flex',
@@ -462,7 +488,7 @@ var LINE_REPLY_MAX_MESSAGES = 5
 // 第三則訊息：Flex carousel，最近的幾筆各一張卡加「開車導航」按鈕
 var FLEX_SEGMENT_CARDS = 3
 var FLEX_CARPARK_CARDS = 2
-var FLEX_COLORS = { '路邊停車格': '#1E88E5', '停車場': '#43A047' }
+// Colors are configured in PAPAKING_FLEX_THEMES above.
 
 // items 可為單一字串、或最多 5 則的陣列，元素是字串（轉成 text 訊息）或現成的訊息物件（Flex）。
 // 每則文字超過 5,000 字會被 LINE 整包拒收，寧可截尾也不要整則消失。
