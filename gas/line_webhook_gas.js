@@ -1667,6 +1667,47 @@ function runTestPoint(seedName) {
   return messages;
 }
 
+// PapaKing V2 mock-only smoke test. No TDX, LINE API, reply token or deployment.
+// Run in a separate GAS test project; review the execution log for the JSON payload.
+function testPapaKingFlexV2_() {
+  var cases = [
+    { kind: '停車場', title: '示範停車場', lines: ['📍 距離約 350 公尺', '🅿️ 剩餘 12 格', '💰 收費依現場公告'], lat: 25.047924, lon: 121.517081, expected: '#1976D2' },
+    { kind: '路邊停車格', title: '示範路邊停車格', lines: ['📍 距離約 180 公尺', '🅿️ 路邊停車'], lat: 25.047924, lon: 121.517081, expected: '#1976D2' },
+    { kind: '公園', title: '示範親子公園', lines: ['📍 距離約 450 公尺', '🌳 兒童遊戲場、步道'], lat: 25.048, lon: 121.518, expected: '#43A047' },
+    { kind: '公廁', title: '示範公共廁所', lines: ['📍 距離約 300 公尺', '♿ 無障礙資訊待確認'], lat: 25.049, lon: 121.519, expected: '#00838F' },
+    { kind: '公廁', title: '無座標示範公廁', lines: ['', '🕒 開放時間待確認'], lat: null, lon: null, expected: '#00838F', noLocation: true }
+  ];
+  var bubbles = cases.map(function (item) {
+    var bubble = flexBubble(item);
+    if (bubble.header.backgroundColor !== item.expected) {
+      throw new Error(item.title + ': wrong theme ' + bubble.header.backgroundColor);
+    }
+    var buttons = bubble.footer ? bubble.footer.contents : [];
+    if (item.noLocation) {
+      if (buttons.length !== 0) throw new Error(item.title + ': unexpected navigation buttons');
+    } else {
+      if (buttons.length !== 2 ||
+          buttons[0].action.label !== '查看地圖' ||
+          buttons[1].action.label !== '開始導航') {
+        throw new Error(item.title + ': expected map and navigation buttons');
+      }
+      buttons.forEach(function (button) {
+        if (!/^https:\/\//.test(button.action.uri)) throw new Error(item.title + ': invalid map URI');
+      });
+    }
+    Logger.log('[PASS] ' + item.kind + ' / ' + item.title + ' / ' + item.expected);
+    return bubble;
+  });
+  var sample = { type: 'flex', altText: 'PapaKing V2 模擬圖卡',
+    contents: { type: 'carousel', contents: bubbles } };
+  if (sample.contents.contents.length !== cases.length) {
+    throw new Error('Incorrect mock card count');
+  }
+  Logger.log('[PASS] PapaKing V2 mock: ' + cases.length + ' cards');
+  Logger.log('Mock Flex JSON (no messages sent): ' + JSON.stringify(sample));
+  return sample;
+}
+
 // 把板橋車站的實際回覆送到 LINE 的驗證端點（只檢查格式、不會發訊息），LINE 會指出 Flex 哪個欄位不合規
 function testFlexValidate() {
   var messages = runTestPoint('板橋車站').map(function (item) {
