@@ -1677,6 +1677,32 @@ function runTestPoint(seedName) {
   return messages;
 }
 
+// Offline regression test for the NTPC static-road fallback card.
+// No TDX, LINE API, live credentials, or deployment required.
+function testPapaKingStaticFallbackV2() {
+  var entry = {
+    source: 'NTPC_STATIC', roadName: '淡水區後洲路一段',
+    fee: '依公告收費', hours: '依現場公告', lat: null, lon: null
+  };
+  var result = renderOnStreet([entry], {});
+  if (result.cards.length !== 1) throw new Error('Static fallback card missing');
+  if (result.cards[0].lat !== null || result.cards[0].lon !== null) {
+    throw new Error('Static fallback must not invent coordinates');
+  }
+  var bubble = flexBubble(result.cards[0]);
+  if (bubble.header.backgroundColor !== '#1976D2') {
+    throw new Error('Static fallback must use parking blue');
+  }
+  if (bubble.footer) throw new Error('Static fallback must not show map/navigation');
+  var details = bubble.body.contents.map(function (item) { return item.text || ''; }).join(' ');
+  if (details.indexOf('即時空位狀態未提供') < 0 || details.indexOf(entry.roadName) < 0) {
+    throw new Error('Static fallback information missing');
+  }
+  if (result.text.indexOf(entry.roadName) < 0) throw new Error('Original text response missing');
+  Logger.log('[PASS] NTPC Static fallback: text + blue Flex card, no navigation');
+  return bubble;
+}
+
 // PapaKing V2 mock-only smoke test. No TDX, LINE API, reply token or deployment.
 // Run in a separate GAS test project; review the execution log for the JSON payload.
 function testPapaKingFlexV2_() {
