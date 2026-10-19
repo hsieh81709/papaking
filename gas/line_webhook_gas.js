@@ -1677,6 +1677,43 @@ function runTestPoint(seedName) {
   return messages;
 }
 
+// Live-data integration check in an isolated GAS copy of this full script.
+// Set PAPAKING_TEST_LAT and PAPAKING_TEST_LON to verified coordinates for
+// the Tamsui Houzhou Rd Sec. 1 test address. Does not send LINE messages.
+function testPapaKingLiveParkingV2() {
+  var props = PropertiesService.getScriptProperties();
+  var latRaw = props.getProperty('PAPAKING_TEST_LAT');
+  var lonRaw = props.getProperty('PAPAKING_TEST_LON');
+  if (!latRaw || !lonRaw) throw new Error('Set PAPAKING_TEST_LAT and PAPAKING_TEST_LON');
+  var lat = Number(latRaw), lon = Number(lonRaw);
+  if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    throw new Error('Invalid test coordinates');
+  }
+  var messages = buildReply(lat, lon);
+  var flex = messages.filter(function (m) { return m && typeof m === 'object' && m.type === 'flex'; });
+  var cards = flex.length ? flex[0].contents.contents : [];
+  Logger.log('[INFO] parking reply messages=' + messages.length + ', flex cards=' + cards.length);
+  cards.forEach(function (bubble, i) {
+    if (bubble.header.backgroundColor !== '#1976D2') throw new Error('Card ' + i + ': wrong theme');
+    if (!bubble.body || !bubble.body.contents) throw new Error('Card ' + i + ': missing body');
+  });
+  var fallback = cards.filter(function (bubble) {
+    return bubble.body.contents.some(function (item) {
+      return item.text && item.text.indexOf('即時空位狀態未提供') >= 0;
+    });
+  });
+  fallback.forEach(function (bubble) {
+    if (bubble.footer) throw new Error('Static fallback card must not navigate');
+  });
+  Logger.log('[PASS] Live parking reply structure and card colors');
+  if (fallback.length) {
+    Logger.log('[PASS] Static fallback found in live data, no navigation');
+  } else {
+    Logger.log('[INFO] Static fallback not triggered for this query; no fallback integration PASS claimed');
+  }
+  return { messageCount: messages.length, cardCount: cards.length, fallbackCount: fallback.length };
+}
+
 // Offline regression test for the NTPC static-road fallback card.
 // No TDX, LINE API, live credentials, or deployment required.
 function testPapaKingStaticFallbackV2() {
