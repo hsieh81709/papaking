@@ -1556,6 +1556,16 @@ function renderOnStreet(ranked, info) {
       if (entry.fee) result += '💰 ' + entry.fee + '\n';
       if (entry.hours) result += '🕒 ' + entry.hours + '\n';
       result += '📍 所在道路\n即時空位狀態未提供\n\n';
+      // Static fallback has a road name, not a reliable parking-space coordinate.
+      // Show an information-only Flex card without map or navigation buttons.
+      cards.push({
+        kind: '路邊停車格',
+        title: entry.roadName,
+        lines: ['⚪ 有路邊收費停車', entry.fee ? '💰 ' + entry.fee : '',
+          entry.hours ? '🕒 ' + entry.hours : '', '📍 所在道路', '即時空位狀態未提供'],
+        lat: null,
+        lon: null
+      });
       continue;
     }
     var fare = (info[entry.segId] || [])[2];
