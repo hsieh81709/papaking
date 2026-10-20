@@ -57,6 +57,7 @@ jobs:
           ast.parse(Path('tools/import-park-workbook.py').read_text())
           PY
           git diff --check
+          git show --format= --check HEAD
 
       - name: Run all park and webhook regressions with synthetic data
         env:
