@@ -80,3 +80,23 @@ https://www.notion.so/2a37a24cf64081dcbc11c8948ad10337
 品質分級與唯讀工具、安全同步／備份／回復步驟見 [操作指引](../docs/parks/runbook.md)；
 正式資料存取限制、版本盤點與實際驗收結果見 [驗收紀錄](../docs/parks/acceptance.md)。
 B4-3 現在預設為唯讀預覽；B4-5 正式同步必須傳入本次使用者明確確認的 ID 與預覽 fingerprint。
+
+
+## PK-04～PK-07 回歸與隔離診斷
+
+回選單會取消當前使用者／對話的公園條件；重新選擇公園仍能保存新條件。公園Flex被LINE 400拒收時，最多嘗試一次同批結果的文字備援；200、429、500與不確定的網路失敗不自動重送。
+
+`testPapaKingLiveParkingV2()` 的設定契約已加嚴。它只應在**另一個隔離GAS測試專案**執行；目前沒有對正式GAS執行。需要 Script Properties：
+
+| 屬性 | 值與意義 |
+|---|---|
+| `PAPAKING_TEST_ENVIRONMENT` | `isolated`；只是呼叫者聲明，不能代替核對真正script ID |
+| `PAPAKING_TEST_COMMIT` | 40位來源commit SHA；需另外比對來源，函式不會自動核實Git |
+| `PAPAKING_TEST_GAS_VERSION` | 隔離專案的正整數版本號；需另外核對版本對照 |
+| `PAPAKING_TEST_POINT_ID` | 英文字母起始的公開fixture標籤（英數／底線／連字號，最多80字元），不要放個人位置或座標 |
+| `PAPAKING_TEST_LAT`／`PAPAKING_TEST_LON` | 公開測試點的十進位台灣座標；診斷回執不寫原始座標 |
+| `PAPAKING_TEST_EXPECTATION` | `cards`（預設，至少一張有效卡）；`static-fallback`（必須命中無導航Static卡）；`empty`（必須同時有明確路邊／停車場無結果文字，不能是錯誤或任意空內容） |
+
+回執會記錄時間、實際script ID、填入的來源／版本、fixture標籤、觀察數量及各斷言 `passed`／`not_exercised`。明確空結果回 `PASS_EMPTY_RESULT`，不會把卡片／配色標為已驗證。來源／版本仍為外部填入，LINE schema、訊息投遞及Sheets寫入一律不會因此被標記完成。設定 `isolated` 並不是技術沙盒，執行者仍須核對測試專案、帳號與測試資源。
+
+CI與完整測試紀錄見 [PK04-07驗證紀錄](../docs/verification/PK04-07.md)。執行根目錄 `node --test test/parks/*.test.mjs`；Worker在其目錄執行 `npm ci`、`npm test`。GitHub Actions只用合成資料，不部署、不執行remote schema、不需要正式Google／LINE／綠界憑證。

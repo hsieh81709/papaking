@@ -1,0 +1,252 @@
+PK-04 / PK-05 / PK-06 / PK-07 verification — 2026-10-20 (Asia/Taipei)
+Baseline: edab0607fb517dd0b584c6c9f3a909d471c67982
+All test data and LINE / Sheets / Apps Script services are synthetic or stubbed.
+No actual Google Sheets writes, LINE delivery, GAS deployment or main merge occurred.
+Red runs were executed BEFORE the corresponding application fix; exit status was 1.
+Green runs exited 0. Original 121 park tests and all sponsor-worker files are unchanged.
+
+=== PK04 RED ===
+✖ PK-04 user: menu cancels park intent before parking location action (9.659306ms)
+✖ PK-04 group: menu cancels park intent before parking location action (2.464231ms)
+✖ PK-04 room: menu cancels park intent before parking location action (2.496322ms)
+✖ PK-04 menu reset is isolated from the same user in another conversation and another group member (2.335947ms)
+✔ PK-04 reselecting from each menu alias sets a new one-shot park intent (8.560523ms)
+✔ PK-04 park intent works before TTL and is consumed once (2.177634ms)
+✔ PK-04 expired intent and direct locations retain default parking (2.412622ms)
+✔ PK-04 menu remains usable when only the parking module is installed (2.080489ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 4
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 114.932325
+
+=== PK04 GREEN ===
+✔ PK-04 user: menu cancels park intent before parking location action (7.952252ms)
+✔ PK-04 group: menu cancels park intent before parking location action (2.43001ms)
+✔ PK-04 room: menu cancels park intent before parking location action (1.897281ms)
+✔ PK-04 menu reset is isolated from the same user in another conversation and another group member (3.174973ms)
+✔ PK-04 reselecting from each menu alias sets a new one-shot park intent (8.736324ms)
+✔ PK-04 park intent works before TTL and is consumed once (2.890234ms)
+✔ PK-04 expired intent and direct locations retain default parking (1.856164ms)
+✔ PK-04 menu remains usable when only the parking module is installed (2.227613ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.147228
+
+=== PK05 RED ===
+✖ PK-05 rejected park Flex sends text from the same query, without extra Sheets or parking requests (7.90266ms)
+✔ PK-05 status 200 does not duplicate a park reply or retry an uncertain request (2.313868ms)
+✔ PK-05 status 429 does not duplicate a park reply or retry an uncertain request (1.76997ms)
+✔ PK-05 status 500 does not duplicate a park reply or retry an uncertain request (1.824954ms)
+✖ PK-05 fallback rejected with 400 is attempted once, with no recursive retry (1.964761ms)
+✖ PK-05 no-result park reply is text and reads the park data once (1.960865ms)
+✔ PK-05 invalid park coordinates use text without querying data (1.695423ms)
+✔ PK-05 existing parking text plus Flex still retries only its original truncated text on 400 (2.358356ms)
+✔ PK-05 pure text rejection and Flex without a supplied fallback never invent retries (1.840158ms)
+✖ PK-05 explicit fallback respects LINE text limits and is not included in Flex JSON (1.989121ms)
+✔ PK-05 transport exceptions are not retried and the webhook contains the event failure (1.988745ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 7
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 104.906824
+
+=== PK05 GREEN ===
+✔ PK-05 rejected park Flex sends text from the same query, without extra Sheets or parking requests (7.996886ms)
+✔ PK-05 status 200 does not duplicate a park reply or retry an uncertain request (2.017315ms)
+✔ PK-05 status 429 does not duplicate a park reply or retry an uncertain request (2.092355ms)
+✔ PK-05 status 500 does not duplicate a park reply or retry an uncertain request (1.778059ms)
+✔ PK-05 fallback rejected with 400 is attempted once, with no recursive retry (2.099575ms)
+✔ PK-05 no-result park reply is text and reads the park data once (1.884798ms)
+✔ PK-05 invalid park coordinates use text without querying data (1.95418ms)
+✔ PK-05 existing parking text plus Flex still retries only its original truncated text on 400 (2.137286ms)
+✔ PK-05 pure text rejection and Flex without a supplied fallback never invent retries (1.811347ms)
+✔ PK-05 explicit fallback respects LINE text limits and is not included in Flex JSON (1.858136ms)
+✔ PK-05 transport exceptions are not retried and the webhook contains the event failure (2.086196ms)
+✔ 3km inclusive radius, five nearest results, straight-line sort and stable ties (9.81782ms)
+✔ exact radius boundary admitted; outside radius excluded (4.297566ms)
+✔ multiple facility rows merge; facility filter ignores unreliable other facilities (3.371895ms)
+✔ invalid coordinates, duplicate IDs, missing IDs, unreviewed status are excluded (2.659372ms)
+✔ invalid query NaN, 121.46 never queries Sheets (2.05969ms)
+✔ invalid query bad, 121.46 never queries Sheets (2.160453ms)
+✔ invalid query null, 121.46 never queries Sheets (1.588796ms)
+✔ invalid query true, 121.46 never queries Sheets (1.524259ms)
+✔ invalid query 25, Infinity never queries Sheets (1.835936ms)
+✔ invalid query 25,  never queries Sheets (1.79484ms)
+✔ invalid query 25, 0 never queries Sheets (2.398282ms)
+✔ no results uses text fallback; populated result builds up to five Flex cards (2.547499ms)
+✔ intent is one-shot and scoped to conversation plus user, missing group user rejected (3.20775ms)
+✔ real Webhook dispatch routes park then restores parking; no LINE API calls (6.27621ms)
+✔ existing parking Flex smoke tests and NTPC Static Fallback regression pass unchanged (4.108568ms)
+✔ NTPC static road matches exact road/district, excludes motorcycle and alley parent match (2.962234ms)
+✔ search fails explicitly on missing facility headers instead of returning false empty results (2.552843ms)
+✔ non-inclusive playground labels never match inclusive filter; positive rows still union (2.547315ms)
+✔ PK-04 user: menu cancels park intent before parking location action (11.390107ms)
+✔ PK-04 group: menu cancels park intent before parking location action (3.103393ms)
+✔ PK-04 room: menu cancels park intent before parking location action (2.609588ms)
+✔ PK-04 menu reset is isolated from the same user in another conversation and another group member (3.268569ms)
+✔ PK-04 reselecting from each menu alias sets a new one-shot park intent (9.527664ms)
+✔ PK-04 park intent works before TTL and is consumed once (2.671778ms)
+✔ PK-04 expired intent and direct locations retain default parking (2.469372ms)
+✔ PK-04 menu remains usable when only the parking module is installed (2.232096ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 166.215192
+
+=== PK06 RED ===
+✖ PK-06 default card expectation rejects zero cards instead of logging PASS (5.994811ms)
+✖ PK-06 static-fallback expectation fails if only regular parking cards exist (1.500375ms)
+✖ PK-06 an explicit legitimate empty result has no card/color PASS claim (2.262126ms)
+✖ PK-06 empty expectation rejects an unexpected populated result (1.531399ms)
+✖ PK-06 arbitrary zero-card text cannot pass as a valid empty parking result (1.749383ms)
+✖ PK-06 an upstream error cannot pass as empty or successful cards (1.330827ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=undefined fails before querying (1.553389ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=production fails before querying (1.354511ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_COMMIT=short-sha fails before querying (1.675968ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_GAS_VERSION= fails before querying (1.641826ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_POINT_ID=25,121 fails before querying (1.377178ms)
+✖ PK-06 invalid receipt configuration PAPAKING_TEST_EXPECTATION=unknown fails before querying (1.452857ms)
+✖ PK-06 receipt records isolated target, supplied source/version, timestamp and actual assertions without coordinates (1.944096ms)
+✖ PK-06 explicit Static Fallback verifies its actual presence and no navigation (2.101688ms)
+✔ PK-06 Static Fallback with a footer fails without a success receipt (3.008939ms)
+✖ PK-06 wrong color, empty carousel and malformed bubble do not pass structure checks (2.812785ms)
+✖ PK-06 whitespace coordinates are invalid and never trigger data requests (1.477928ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 1
+ℹ fail 16
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.111367
+
+=== PK06 GREEN ===
+✔ PK-06 default card expectation rejects zero cards instead of logging PASS (7.0539ms)
+✔ PK-06 static-fallback expectation fails if only regular parking cards exist (1.914013ms)
+✔ PK-06 an explicit legitimate empty result has no card/color PASS claim (2.288762ms)
+✔ PK-06 empty expectation rejects an unexpected populated result (1.677432ms)
+✔ PK-06 arbitrary zero-card text cannot pass as a valid empty parking result (1.925663ms)
+✔ PK-06 an upstream error cannot pass as empty or successful cards (3.007745ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=undefined fails before querying (1.745303ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=production fails before querying (1.721679ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_COMMIT=short-sha fails before querying (1.731095ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_GAS_VERSION= fails before querying (1.76636ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_POINT_ID=25,121 fails before querying (1.542539ms)
+✔ PK-06 invalid receipt configuration PAPAKING_TEST_EXPECTATION=unknown fails before querying (1.566945ms)
+✔ PK-06 receipt records isolated target, supplied source/version, timestamp and actual assertions without coordinates (1.881155ms)
+✔ PK-06 explicit Static Fallback verifies its actual presence and no navigation (2.955497ms)
+✔ PK-06 Static Fallback with a footer fails without a success receipt (1.560898ms)
+✔ PK-06 wrong color, empty carousel and malformed bubble do not pass structure checks (4.317443ms)
+✔ PK-06 whitespace coordinates are invalid and never trigger data requests (1.7488ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 121.658036
+
+=== FINAL PARK SUITE: node --test --test-reporter=tap test/parks/*.test.mjs ===
+# Subtest: PK-05 rejected park Flex sends text from the same query, without extra Sheets or parking requests
+# Subtest: PK-05 status 200 does not duplicate a park reply or retry an uncertain request
+# Subtest: PK-05 status 429 does not duplicate a park reply or retry an uncertain request
+# Subtest: PK-05 status 500 does not duplicate a park reply or retry an uncertain request
+# Subtest: PK-05 fallback rejected with 400 is attempted once, with no recursive retry
+# Subtest: PK-05 no-result park reply is text and reads the park data once
+# Subtest: PK-05 invalid park coordinates use text without querying data
+# Subtest: PK-05 existing parking text plus Flex still retries only its original truncated text on 400
+# Subtest: PK-05 pure text rejection and Flex without a supplied fallback never invent retries
+# Subtest: PK-05 explicit fallback respects LINE text limits and is not included in Flex JSON
+# Subtest: PK-05 transport exceptions are not retried and the webhook contains the event failure
+# Subtest: PK-06 default card expectation rejects zero cards instead of logging PASS
+# Subtest: PK-06 static-fallback expectation fails if only regular parking cards exist
+# Subtest: PK-06 an explicit legitimate empty result has no card/color PASS claim
+# Subtest: PK-06 empty expectation rejects an unexpected populated result
+# Subtest: PK-06 arbitrary zero-card text cannot pass as a valid empty parking result
+# Subtest: PK-06 an upstream error cannot pass as empty or successful cards
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=undefined fails before querying
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_ENVIRONMENT=production fails before querying
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_COMMIT=short-sha fails before querying
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_GAS_VERSION= fails before querying
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_POINT_ID=25,121 fails before querying
+# Subtest: PK-06 invalid receipt configuration PAPAKING_TEST_EXPECTATION=unknown fails before querying
+# Subtest: PK-06 receipt records isolated target, supplied source/version, timestamp and actual assertions without coordinates
+# Subtest: PK-06 explicit Static Fallback verifies its actual presence and no navigation
+# Subtest: PK-06 Static Fallback with a footer fails without a success receipt
+# Subtest: PK-06 wrong color, empty carousel and malformed bubble do not pass structure checks
+# Subtest: PK-06 whitespace coordinates are invalid and never trigger data requests
+# Subtest: PK-04 user: menu cancels park intent before parking location action
+# Subtest: PK-04 group: menu cancels park intent before parking location action
+# Subtest: PK-04 room: menu cancels park intent before parking location action
+# Subtest: PK-04 menu reset is isolated from the same user in another conversation and another group member
+# Subtest: PK-04 reselecting from each menu alias sets a new one-shot park intent
+# Subtest: PK-04 park intent works before TTL and is consumed once
+# Subtest: PK-04 expired intent and direct locations retain default parking
+# Subtest: PK-04 menu remains usable when only the parking module is installed
+# tests 157
+# suites 0
+# pass 157
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 7010.091986
+
+=== WORKER: npm ci --no-audit --no-fund; npm test ===
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 258.496073
+
+=== CI CONFIGURATION / SOURCE CHECKS ===
+Official actionlint v1.7.7 Linux artifact: SHA-256 verified against the official release checksum file.
+Initial actionlint run found illegal runner context at job env; moved runner.temp references into step env/with.
+Final actionlint .github/workflows/offline-tests.yml: exit 0.
+All run blocks: bash -n exit 0. GAS/tools JS syntax and Python AST syntax: exit 0.
+Workflow triggers / contents:read / SHA-pinned actions / absence of requested cloud secrets: checked.
+Node 24.19.0; Python 3.12.14; openpyxl 3.1.5; Worker lockfile install succeeded.
+Git diff against baseline: all original park tests/helpers and the entire sponsor-worker tree unchanged.
+Remote GitHub Actions result: not established by these local checks.
+
+=== IMPLEMENTATION COMMITS AND FILES ===
+7d89cdbbe1e4474c156b564948415b559548173a fix(PK-04): clear conversation park intent when reopening menu
+
+M	gas/line_webhook_gas.js
+A	test/parks/webhook-routing.test.mjs
+
+cec41a334ba24353e7248e00414d1af41b79707e fix(PK-05): retry rejected park Flex with snapshot text fallback
+
+M	gas/line_webhook_gas.js
+M	gas/park_search_gas.js
+A	test/parks/line-fallback.test.mjs
+
+090fc385a6078ce887350383838566bfc8552043 fix(PK-06): require explicit diagnostic expectations and evidence metadata
+
+M	gas/line_webhook_gas.js
+A	test/parks/parking-diagnostic.test.mjs
+
+766c65d0b40ff07e3845a0737071e98ab404be7f ci(PK-07): run pinned offline suites and retain failure logs
+
+A	.github/workflows/offline-tests.yml
+

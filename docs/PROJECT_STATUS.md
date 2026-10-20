@@ -3,6 +3,14 @@
 盤點日期：2026-10-20（Asia/Taipei）。儲存庫：`hsieh81709/papaking`。
 本文件以唯讀 Git 分支、原始碼、設定、既有紀錄及本次測試為依據；正式 GAS、Google Sheets、LINE Webhook 與 `main` 均未變更。建議 Issues 與整合關卡見 [ROADMAP.md](ROADMAP.md)。
 
+## PK-04～PK-07 本輪更新
+
+本輪自 `edab060` 延續：PK-04 選單清除、PK-05 同批結果的 Flex 400 文字備援、PK-06 非空／Static／明確空結果診斷契約已完成程式與離線回歸；PK-07 已新增 [offline-tests.yml](../.github/workflows/offline-tests.yml)。原有121個公園案例未改寫，新增36個，現為 **157／157通過**；Worker **25／25通過**。
+
+新增 workflow 經 actionlint 1.7.7 及本機等效命令驗證，不需要正式 secrets、沒有部署或遠端schema步驟。遠端 Actions 結果與隔離 GAS／LINE 真實驗證不因本機通過而視為完成。逐項 red→green、Commit／檔案清單與診斷設定見 [本輪驗證紀錄](verification/PK04-07.md)。
+
+以下三分支 SHA／tag／檔數仍為原盤點快照（V2 `0b4a3f0`）；不是本輪更新後的遠端HEAD。原缺口描述保留作為修正前證據，最新進度以上述更新及驗證紀錄為準。
+
 ## 1. 結論與狀態定義
 
 停車主流程、公園搜尋／Flex 與贊助 Worker 已有程式；公園品質及安全同步工具集中在 V2 分支。**公廁只有通用卡片配色與合成示例，沒有完整服務。**
@@ -51,7 +59,8 @@ v0.3.0 / dce71bd
 ```text
 papaking/
 ├── README.md / LICENSE / .gitignore
-├── .github/FUNDING.yml                 # 贊助連結；三分支均無 workflows/
+├── .github/FUNDING.yml                 # 贊助連結
+├── .github/workflows/offline-tests.yml # 本輪V2新增；原三分支快照均無CI
 ├── gas/
 │   ├── appsscript.json                 # V8、Asia/Taipei、匿名 Web App
 │   ├── line_webhook_gas.js             # LINE、停車來源、快取、額度、Flex、內嵌診斷
@@ -66,9 +75,10 @@ papaking/
 │   ├── package.json / package-lock.json / .dev.vars.example / .gitignore
 │   ├── test/ecpay.test.js / test/index.test.js
 │   └── README.md
-├── test/parks/                          # 僅 V2：helpers + 五個 *.test.mjs
+├── test/parks/                          # 僅 V2：helpers + 八個 *.test.mjs（本輪新增三個）
 │   ├── audit.test.mjs / search.test.mjs / sync.test.mjs
-│   └── regeocode.test.mjs / export.test.mjs / helpers.mjs
+│   ├── regeocode.test.mjs / export.test.mjs / helpers.mjs
+│   └── webhook-routing.test.mjs / line-fallback.test.mjs / parking-diagnostic.test.mjs
 ├── tools/                              # 僅 V2：HTML 唯讀匯出、Python XLSX 匯入
 │   ├── park-export-readonly.html / import-park-workbook.py
 │   ├── park-audit.mjs / park-verify-export.mjs
@@ -95,7 +105,7 @@ README 對「台灣停車 LINE Bot」與單檔停車快速開始仍有參考價�
 | 停車主流程 | 三分支：TDX 路邊／路外、新北／基隆補源、去重、導航、快取、月額度 | V2 部分涵蓋分流、卡片及 Static 規則；未覆蓋全部 TDX／Maps／配額流程 | 有歷史 production／示範紀錄；本次未驗真實查詢 | 歷史 `dce71bd` 聲稱同步 production；當前部署版本未證實 |
 | NTPC Static Fallback | 三分支有精確路段、行政區、小客車篩選及文字；V2 新增無座標資訊卡、無導航 | V2 既有 regression 與路段／機車／巷弄測試通過 | 診斷函式存在，未取得真實命中回執 | V2 變更未證實部署 |
 | 公園搜尋 | 三分支有 3km／最多5筆／直線排序、滑梯／鞦韆／共融、文字備援；V2 加嚴座標、ID、設施合併及對話範圍 | V2 搜尋／分流 tests 通過，資料為合成 | 使用者曾提供 635 筆歷史結果；當前四表未讀取 | 有 v0.3.0 歷史訊息；當前來源／版本未證實 |
-| 公園 Flex／Quick Reply | 三分支包含 V0.3.1 公園卡與五項選單；實際公園路徑仍用自己的 `buildParkFlexReply_` | V2 有結果／無結果與一般分流通過；本次另發現兩項未覆蓋缺口 | 無版本化 LINE 驗證成功回執 | 已 merge 不代表已部署 |
+| 公園 Flex／Quick Reply | 三分支包含 V0.3.1 公園卡與五項選單；實際公園路徑仍用自己的 `buildParkFlexReply_` | V2 有結果／無結果與分流通過；PK-04／05已補測並修正原缺口 | 無版本化 LINE 驗證成功回執 | 已 merge 不代表已部署 |
 | 635 筆品質稽核／匯出 | 僅 V2 有 A/B/C、原因、同座標、行政區／地址、差異與一次四表 XLSX 流程 | V2 通過，含 635 筆合成資料 | 真實資料、唯一失敗 ID、公開來源逐筆查核未完成 | 離線工具無需正式部署；未安裝至正式 GAS 的證據 |
 | B4-3／B4-5 同步 | main 有舊版；V2 預設唯讀、人工核准、指紋、備份、journal、NOOP、回復 | V2 故障注入／Date／衝突／中斷回復通過 | 實際 Sheets 副本寫入／回復未驗證 | 正式同步不得僅憑離線通過啟用 |
 | 公廁服務 | 三分支無資料匯入／搜尋／意圖／Webhook 路由；僅 V2 有 teal theme 與 mock 卡片 | V2 模板顏色、按鈕／無座標示例通過 | 未實作產品流程，無線上證據 | 無可確認的公廁服務部署 |
@@ -124,7 +134,7 @@ main／舊park-flex的停車卡仍分路邊藍 `#1E88E5` 與停車場綠 `#43A04
 
 | 本次檢查 | 結果 | 可證明的範圍 |
 |---|---|---|
-| `node --test test/parks/*.test.mjs`（V2） | 121 passed、0 failed／skipped／cancelled | 公園／匯出／同步 mocks 及部分 Flex／分流；不是實際 Google API 寫入 |
+| `node --test test/parks/*.test.mjs`（V2） | 157 passed（原有121＋新增36）、0 failed／skipped／cancelled | 公園／匯出／同步 mocks 及部分 Flex／分流；不是實際 Google API 寫入 |
 | `(cd sponsor-worker && npm test)` | 25 passed、0 failed／skipped／cancelled | 密碼學公開向量與 mock D1／LINE 行為 |
 | 三分支 GAS JS 語法 | main 4、park-flex 2、V2 5 檔均通過 VM syntax parse | 僅語法；不代表舊版通過 V2 的新安全測試 |
 | Worker 三分支內容比對 | 完整 tree 雜湊相同 | 同一次 25 tests 對應三分支相同內容，非重跑三次 |
@@ -140,13 +150,13 @@ node --test test/parks/*.test.mjs
 npm test
 ```
 
-三項**額外合成診斷**已重現，未計入 121 個通過案例，也未在本次修改程式：
+以下三項是修正前的**額外合成診斷**；原盤點未計入121個案例。本輪已先新增失敗測試，再完成PK-04／05／06修正（新增36項），保留當時重現方式供追溯：
 
 1. **選單殘留條件**：依序傳「附近公園」→「選單」→選單的「停車／分享位置」所產生的位置事件，實際路由仍為 park。`isMenuCommand` 分支沒有清除既有 intent，位置事件只看快取；因此不能假設使用者回選單就已恢復停車。見 `doPost`、`buildPapaKingQuickMenu_`（PK-04）。
 2. **公園 Flex 400 無文字備援**：把 `postLineReply` stub 為回覆 400，對 `replyLine` 傳單一 Flex，僅出現一次 `[flex]` 呼叫，沒有 text。停車的「文字＋Flex」具有備援，公園單獨 Flex 沒有；不能把「無結果時的文字」當作「API 拒收 Flex 的文字備援」。見 `replyLine`（PK-05）。
 3. **零卡片仍 PASS**：將 `buildReply` stub 為純文字，`testPapaKingLiveParkingV2()` 回傳 `cardCount:0`，仍記錄 `[PASS] Live parking reply structure and card colors`。測試迴圈沒有元素時不會失敗；應增加明確預期或標為未驗到卡片。這次是 stub 診斷，**不是線上測試**（PK-06）。
 
-既有 121 tests 通過與上述缺口同時成立；目前不能把「測試全綠」當作功能全面驗收。
+原盤點的121 tests全綠並未涵蓋這些缺口；本輪已補足對應回歸，但157 tests仍是離線結果，不代表功能已完成線上驗收。
 
 ## 7. 部署設定與證據缺口
 
@@ -163,7 +173,7 @@ npm test
 - `wrangler.jsonc` 設定 Worker 名稱 `papaking-sponsor`、入口 `src/index.js`、compatibility date `2026-09-01`、D1 `DB` binding 與既有 database_id、observability。
 - `npm run deploy` 是正式部署；**`npm run schema` 明確使用 `--remote`，是遠端 D1 寫入**，不是唯讀 readiness check，本次未執行。
 - `.dev.vars.example` 只有空白需求名稱：ECPAY_MERCHANT_ID／HASH_KEY／HASH_IV、LINE_CHANNEL_ACCESS_TOKEN、LINE_TO。設定檔與範例不能證明雲端 secrets、D1 table、通知對象或付款回呼已正確。
-- 三分支無 `.github/workflows/`，未設定可見的 GitHub Actions 測試／部署流程；外部 CI、分支保護與 Cloudflare dashboard 狀態未經 API 核實。
+- 原三分支快照均無 `.github/workflows/`；本輪V2新增僅離線測試的GitHub Actions，不含部署。遠端run、分支保護與Cloudflare dashboard狀態仍需實際回執，不由本機測試推斷。
 
 ## 8. Google HTTP 403：原因與可行驗證路徑
 
@@ -208,7 +218,7 @@ API Key 不能取代私有試算表的使用者／服務帳號授權；錯誤訊
 
 ## 9. 驗收與尚待決定
 
-本次盤點已完成：三分支樹／祖先／tag／差異、README 與部署契約、121＋25 既有測試、3項額外合成缺口、Google 403 分層與可行授權方案。沒有對正式部署或真實635筆宣稱驗收成功。
+本次盤點已完成：三分支樹／祖先／tag／差異、README 與部署契約、原有121＋25測試與本輪新增36項回歸、3項已修正的合成缺口、Google 403 分層與可行授權方案。沒有對正式部署或真實635筆宣稱驗收成功。
 
 後續先完成核心缺口／CI／唯讀資料取得，再討論整合與隔離環境驗證；最後才以獨立授權處理正式部署或 Sheets 寫入。各步的依賴、Issue 草案與分支順序見 [ROADMAP.md](ROADMAP.md)。
 

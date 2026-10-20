@@ -4,6 +4,17 @@
 
 本文件是後續工作提案；**未建立 GitHub Issues、未合併 main、未部署、未寫入 Google Sheets**。現況、測試邊界與403證據見 [PROJECT_STATUS.md](PROJECT_STATUS.md)。以下 PK-xx 為本文件草案編號，不是 GitHub 已存在的 Issue 號；建立時先人工去重，因本次 GitHub REST API 不可用，無法查明所有既有 Issues。
 
+## 本輪實作進度（PK-04～PK-07）
+
+| 項目 | 目前進度 | 尚不代表完成的部分 |
+|---|---|---|
+| PK-04 | 先重現4個失敗，再修正；8個新回歸通過 | 未更新正式Webhook |
+| PK-05 | 先重現4個失敗，再修正；11個新回歸通過，文字使用同批公園結果 | 尚無真實LINE回覆驗收 |
+| PK-06 | 先重現16個失敗，再修正；17個新回歸通過，回執區分未執行的斷言 | 隔離GAS真實查詢／LINE schema仍需測試資源與授權；不可據此關閉線上驗收子項 |
+| PK-07 | Workflow已建立；固定actions SHA、Node／Python版本，actionlint及等效本機命令通過 | 未由本機推斷遠端Actions成功，未設定branch protection |
+
+原有121個公園測試保持不變，新增36個後合計157通過；Worker25通過。Commit、差異、red→green與設定契約見 [PK04-07驗證紀錄](verification/PK04-07.md)。下列Issue問題描述為原盤點證據；已實作項目以本表更新為準，不冒稱遠端Issue已建立或關閉。
+
 ## 1. 優先順序與完成關卡
 
 - **P0**：阻擋真實公園資料驗收／同步安全；不代表要停止所有獨立文件或離線改善。
