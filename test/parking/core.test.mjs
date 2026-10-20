@@ -61,3 +61,39 @@ test('full buildReply reuses static cache but refreshes live between two events'
  const first=h.c.buildReply(lat,lon);assert.match(first[1],/剩餘 7 \/ 20/);assert.equal(first[2].type,'flex');const before=h.calls.length;
  remaining=2;const second=h.c.buildReply(lat,lon);assert.match(second[1],/剩餘 2 \/ 20/);assert.equal(h.calls.length-before,3);assert.ok(!h.logs.join('').includes(String(lat)));
 });
+
+for(const code of [401,429,500])test(`full buildReply upstream ${code} has explicit text without phantom cards`,()=>{
+ const h=harness();h.c.DRIVE_TIME_RPC_ENABLED=false;h.fetch=u=>u===h.c.AUTH_URL?r(200,{access_token:'fixture-token'}):r(code,{error:'synthetic failure'});
+ const messages=h.c.buildReply(lat,lon);assert.equal(messages.length,2);assert.ok(messages.every(m=>typeof m==='string'&&/錯誤|一分鐘/.test(m)));assert.equal(h.cache.get(h.c.nearbyCached(lat,lon).keys[0]),null);
+});
+test('NTPC tail HTTP failure does not cache prior successful pages',()=>{
+ const h=harness();h.c.NTPC_PAGE_SIZE=1;h.fetch=u=>r(new URL(u).searchParams.get('page')==='3'?503:200,f.ntpcStatic);assert.equal(h.c.getNtpcCarparks().length,0);assert.equal(h.cache.get('ntpc_carparks'),null);
+});
+test('NTPC malformed JSON or transport failure does not cache static list',()=>{
+ for(const mode of ['html','network']){const h=harness();h.fetch=()=>{if(mode==='network')throw new Error('synthetic failure');return r(200,'<html>failure</html>');};assert.equal(h.c.getNtpcCarparks().length,0);assert.equal(h.cache.get('ntpc_carparks'),null);}
+});
+test('drive corrupt cache falls back to distance without losing reply',()=>{
+ const h=harness();h.cache.put(h.c.driveCacheKey(lat,lon,entry()),'malformed',1800);const es=rank(h);assert.equal(es.length,1);assert.ok(!es[0].drive);assert.match(h.c.travelLine(es[0]),/📍/);
+});
+test('drive RPC partial success leaves failed target at straight distance',()=>{
+ const h=harness();h.c.driveTimesBatch=()=>[{seconds:90,meters:null},null];const es=rank(h,[entry(),{lat:25.002,lon:121.462}]);assert.equal(es[0].drive.seconds,90);assert.ok(es[0].drive.meters>0);assert.equal(es[1].drive,null);assert.match(h.c.travelLine(es[1]),/📍/);
+});
+test('nearby cache write failure still returns fetched responses',()=>{
+ const h=harness(),n=h.c.nearbyCached(lat,lon);h.cache.put=()=>{throw new Error('cache quota');};const out=h.c.nearbyStore(n,[r(200,f.spots),r(200,f.parks)]);assert.equal(h.c.parseOnStreet(lat,lon,out[0]).entries.length,1);assert.equal(h.c.parseParking(lat,lon,null,out[1]).entries.length,2);
+});
+test('TDX keys are limited to five calls each within one minute',()=>{
+ const h=harness();const indexes=Array.from({length:10},()=>h.c.pickTDXKey());assert.equal(indexes.filter(i=>i===0).length,5);assert.equal(indexes.filter(i=>i===1).length,5);assert.equal(h.c.pickTDXKey(),-1);
+});
+test('quota denial prevents data fetch and sends explanation only',()=>{
+ const h=harness({MONTHLY_QUOTA:'1'});h.c.consumeQuota({userId:'fixture-user'});let sent;h.c.replyLine=(_t,text)=>{sent=text;};h.c.buildReply=()=>assert.fail('quota-denied request must not query parking');h.c.handleLocation({source:{userId:'fixture-user'},message:{latitude:lat,longitude:lon}});assert.equal(sent,h.c.QUOTA_USER_TEXT);
+});
+test('disabled quotas leave no persisted counters',()=>{const h=harness();assert.equal(h.c.consumeQuota({userId:'fixture-user'}),null);assert.ok(!Object.keys(h.props).some(k=>k.startsWith('quota_')));});
+test('new month purges previous counters even if six-hour marker survives midnight',()=>{
+ const h=harness({MONTHLY_QUOTA:'2'});h.setTime('2026-10-31T15:59:00Z');h.c.consumeQuota({userId:'fixture-user'});const old=h.c.quotaPrefix();h.advance(120000);h.c.consumeQuota({userId:'fixture-user'});assert.ok(!Object.keys(h.props).some(k=>k.startsWith(old)));
+});
+test('existing user counter write failure cannot bypass personal cap',()=>{
+ const h=harness({MONTHLY_QUOTA:'2'});h.c.consumeQuota({userId:'fixture-user'});h.propertyService.setProperty=()=>{throw new Error('storage full');};assert.equal(h.c.consumeQuota({userId:'fixture-user'}),h.c.QUOTA_STORE_FULL_TEXT);
+});
+test('Google lookup and directions transport errors do not echo origin in logs',()=>{
+ const h=harness();h.geocode=()=>{throw new Error(`private origin ${lat},${lon}`);};h.c.resolveTDXCity(lat,lon);h.directions=()=>{throw new Error(`private origin ${lat},${lon}`);};h.c.driveTime(lat,lon,25.001,121.461);assert.ok(!h.logs.join('').includes(String(lat)));
+});
