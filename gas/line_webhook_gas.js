@@ -252,14 +252,14 @@ function doPost(e) {
               : null;
 
           if (requestedPark) {
-            replyLine(
-              event.replyToken,
-              buildParkFlexReply_(
-                event.message.latitude,
-                event.message.longitude,
-                requestedPark
-              )
+            var parkFallback = {};
+            var parkMessage = buildParkFlexReply_(
+              event.message.latitude,
+              event.message.longitude,
+              requestedPark,
+              parkFallback
             );
+            replyLine(event.replyToken, parkMessage, parkFallback.text);
           } else {
             handleLocation(event);
           }
@@ -495,17 +495,25 @@ var FLEX_CARPARK_CARDS = 2
 // items 可為單一字串、或最多 5 則的陣列，元素是字串（轉成 text 訊息）或現成的訊息物件（Flex）。
 // 每則文字超過 5,000 字會被 LINE 整包拒收，寧可截尾也不要整則消失。
 // Flex JSON 一點不合規 LINE 也是整包 400：那時退回只送文字，reply token 在成功前都還有效
-function replyLine(token, items) {
+function lineTextMessage_(text) {
+  return { type: 'text', text: text.length > LINE_TEXT_LIMIT ? text.slice(0, LINE_TEXT_LIMIT - 1) + '…' : text };
+}
+function replyLine(token, items, fallbackText) {
   var messages = [].concat(items).slice(0, LINE_REPLY_MAX_MESSAGES).map(function (item) {
-    if (typeof item !== 'string') return item;
-    var text = item.length > LINE_TEXT_LIMIT ? item.slice(0, LINE_TEXT_LIMIT - 1) + '…' : item;
-    return { type: 'text', text: text };
+    return typeof item === 'string' ? lineTextMessage_(item) : item;
   });
   var code = postLineReply(token, messages);
   var textOnly = messages.filter(function (m) { return m.type === 'text'; });
-  if (code === 400 && textOnly.length && textOnly.length < messages.length) {
-    Logger.log('LINE 拒收含 Flex 的回覆，改只送文字');
-    postLineReply(token, textOnly);
+  // A 400 means the rich reply was rejected. Do not retry success, transport
+  // failures or other statuses whose delivery state may be uncertain.
+  if (code === 400 && textOnly.length < messages.length) {
+    if (!textOnly.length && typeof fallbackText === 'string' && fallbackText.trim()) {
+      textOnly = [lineTextMessage_(fallbackText)];
+    }
+    if (textOnly.length) {
+      Logger.log('LINE 拒收含 Flex 的回覆，改只送文字');
+      postLineReply(token, textOnly); // One bounded fallback attempt, never recursion.
+    }
   }
 }
 

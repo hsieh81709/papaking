@@ -96,7 +96,10 @@ function parkSearch_(lat,lon,intent) {
 }
 function buildParkReply_(lat,lon,intent) {
   if (!parkSearchCoordinate_(lat,lon)) return '位置座標異常，請重新分享台灣的位置。';
-  var list=parkSearch_(lat,lon,intent);
+  return formatParkReply_(parkSearch_(lat,lon,intent),intent);
+}
+// Render the text fallback from the exact same park result snapshot as Flex.
+function formatParkReply_(list,intent) {
   var head='🌳 附近'+(intent==='全部'?'公園':intent==='共融'?'共融遊戲場':'有'+intent+'的公園')+'（'+PARK_RADIUS_KM+' 公里內）';
   if (!list.length) return head+'\n目前沒有符合條件且已定位的資料。尚未完成座標審核的公園不列入搜尋；遊具搜尋僅依官方休憩設施欄位，可能漏列。';
   return head+'\n'+list.map(function(p,i){
@@ -182,12 +185,15 @@ function testPapaKingRouting() {
 }
 
 /** V0.3.1 公園搜尋 Flex Carousel；既有文字版仍作為備援。 */
-function buildParkFlexReply_(lat, lon, intent) {
+// Optional fallback output is kept separate from the LINE Flex JSON.
+function buildParkFlexReply_(lat, lon, intent, fallback) {
   if (!parkSearchCoordinate_(lat,lon)) {
     return buildParkReply_(lat, lon, intent);
   }
   var parks = parkSearch_(lat, lon, intent);
-  if (!parks.length) return buildParkReply_(lat, lon, intent);
+  var text = formatParkReply_(parks,intent);
+  if (fallback) fallback.text = text;
+  if (!parks.length) return text;
   var cards = parks.map(function(p) {
     var facilities = (p.tags || []).filter(Boolean).join('、');
     var mapUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.lat + ',' + p.lon);
