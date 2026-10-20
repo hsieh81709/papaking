@@ -88,6 +88,16 @@ jobs:
           mkdir -p "$PAPAKING_CI_RESULTS"
           python -m unittest discover -s test/park_sources -v 2>&1 | tee "$PAPAKING_CI_RESULTS/park-sources.log"
 
+      - name: Run manual park review workbook regressions
+        if: ${{ !cancelled() }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          python -m unittest discover -s test/park_review -v 2>&1 | tee "$PAPAKING_CI_RESULTS/park-review.log"
+
       - name: Run sponsor Worker tests without cloud services
         if: ${{ !cancelled() && steps.worker-deps.outcome == 'success' }}
         env:
