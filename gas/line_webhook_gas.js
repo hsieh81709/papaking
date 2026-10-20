@@ -1687,41 +1687,84 @@ function runTestPoint(seedName) {
   return messages;
 }
 
-// Live-data integration check in an isolated GAS copy of this full script.
-// Set PAPAKING_TEST_LAT and PAPAKING_TEST_LON to verified coordinates for
-// the Tamsui Houzhou Rd Sec. 1 test address. Does not send LINE messages.
+// Run ONLY in a separate GAS test project. Metadata is supplied by the runner,
+// not an independently verified deployment/version mapping. Never sends LINE.
 function testPapaKingLiveParkingV2() {
   var props = PropertiesService.getScriptProperties();
-  var latRaw = props.getProperty('PAPAKING_TEST_LAT');
-  var lonRaw = props.getProperty('PAPAKING_TEST_LON');
-  if (!latRaw || !lonRaw) throw new Error('Set PAPAKING_TEST_LAT and PAPAKING_TEST_LON');
+  var environment = props.getProperty('PAPAKING_TEST_ENVIRONMENT');
+  var commit = props.getProperty('PAPAKING_TEST_COMMIT') || '';
+  var version = props.getProperty('PAPAKING_TEST_GAS_VERSION') || '';
+  var pointId = props.getProperty('PAPAKING_TEST_POINT_ID') || '';
+  var expectation = props.getProperty('PAPAKING_TEST_EXPECTATION') || 'cards';
+  if (environment !== 'isolated') throw new Error('PAPAKING_TEST_ENVIRONMENT must be isolated');
+  if (!/^[a-f0-9]{40}$/i.test(commit)) throw new Error('PAPAKING_TEST_COMMIT must be a full source SHA');
+  if (!/^[1-9][0-9]*$/.test(version)) throw new Error('PAPAKING_TEST_GAS_VERSION must identify a numbered test-project version');
+  if (!/^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(pointId)) throw new Error('PAPAKING_TEST_POINT_ID must be a public fixture label, never coordinates');
+  if (['cards', 'static-fallback', 'empty'].indexOf(expectation) < 0) throw new Error('PAPAKING_TEST_EXPECTATION must be cards, static-fallback or empty');
+  var scriptId = typeof ScriptApp !== 'undefined' && typeof ScriptApp.getScriptId === 'function' ? ScriptApp.getScriptId() : null;
+  if (!scriptId) throw new Error('PAPAKING_TEST requires an identified isolated GAS project');
+  var latRaw = props.getProperty('PAPAKING_TEST_LAT') || '';
+  var lonRaw = props.getProperty('PAPAKING_TEST_LON') || '';
+  var decimal = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$/;
   var lat = Number(latRaw), lon = Number(lonRaw);
-  if (!isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-    throw new Error('Invalid test coordinates');
+  if (!decimal.test(latRaw) || !decimal.test(lonRaw) || !isFinite(lat) || !isFinite(lon) || lat < 21 || lat > 26 || lon < 119 || lon > 123) {
+    throw new Error('Invalid Taiwan test coordinates');
   }
   var messages = buildReply(lat, lon);
-  var flex = messages.filter(function (m) { return m && typeof m === 'object' && m.type === 'flex'; });
-  var cards = flex.length ? flex[0].contents.contents : [];
-  Logger.log('[INFO] parking reply messages=' + messages.length + ', flex cards=' + cards.length);
-  cards.forEach(function (bubble, i) {
-    if (bubble.header.backgroundColor !== '#1976D2') throw new Error('Card ' + i + ': wrong theme');
-    if (!bubble.body || !bubble.body.contents) throw new Error('Card ' + i + ': missing body');
+  if (!Array.isArray(messages) || !messages.length || messages.length > LINE_REPLY_MAX_MESSAGES) throw new Error('Invalid parking reply messages');
+  var cards = [], texts = [], flexCount = 0;
+  messages.forEach(function(message) {
+    if (typeof message === 'string' || message && message.type === 'text') {
+      var text = typeof message === 'string' ? message : message.text;
+      if (typeof text !== 'string' || !text.trim()) throw new Error('Empty parking reply text');
+      texts.push(text);
+    } else if (message && message.type === 'flex') {
+      flexCount++;
+      if (!message.contents || message.contents.type !== 'carousel' || !Array.isArray(message.contents.contents) || !message.contents.contents.length) throw new Error('Empty or malformed parking Flex carousel');
+      cards = cards.concat(message.contents.contents);
+    } else {
+      throw new Error('Unsupported parking reply message');
+    }
   });
-  var fallback = cards.filter(function (bubble) {
-    return bubble.body.contents.some(function (item) {
-      return item.text && item.text.indexOf('即時空位狀態未提供') >= 0;
-    });
+  if (texts.some(function(text) { return /❌|⏳/.test(text); })) throw new Error('Upstream error in parking reply; diagnostic failed');
+  if (expectation === 'empty') {
+    var combined = texts.join('\n');
+    if (flexCount || !/目前沒有查詢到(?:小客車|路邊)?停車格/.test(combined) || combined.indexOf('目前沒有查詢到停車場') < 0) throw new Error('Expected a legitimate empty parking result, not missing cards or arbitrary text');
+  } else if (!cards.length) {
+    throw new Error('Expected parking cards but received zero cards');
+  }
+  if (cards.length > FLEX_SEGMENT_CARDS + FLEX_CARPARK_CARDS) throw new Error('Too many parking cards');
+  cards.forEach(function(bubble, i) {
+    if (!bubble || bubble.type !== 'bubble' || !bubble.header || bubble.header.backgroundColor !== '#1976D2') throw new Error('Card ' + i + ': wrong type or color');
+    if (!bubble.body || bubble.body.type !== 'box' || !Array.isArray(bubble.body.contents) || !bubble.body.contents.length) throw new Error('Card ' + i + ': missing body contents');
   });
-  fallback.forEach(function (bubble) {
+  var fallback = cards.filter(function(bubble) {
+    return bubble.body.contents.some(function(item) { return item && typeof item.text === 'string' && item.text.indexOf('即時空位狀態未提供') >= 0; });
+  });
+  fallback.forEach(function(bubble) {
     if (bubble.footer) throw new Error('Static fallback card must not navigate');
   });
-  Logger.log('[PASS] Live parking reply structure and card colors');
-  if (fallback.length) {
-    Logger.log('[PASS] Static fallback found in live data, no navigation');
-  } else {
-    Logger.log('[INFO] Static fallback not triggered for this query; no fallback integration PASS claimed');
-  }
-  return { messageCount: messages.length, cardCount: cards.length, fallbackCount: fallback.length };
+  if (expectation === 'static-fallback' && !fallback.length) throw new Error('Expected Static Fallback but none was observed');
+  var receipt = {
+    schemaVersion: 1,
+    status: expectation === 'empty' ? 'PASS_EMPTY_RESULT' : 'PASS',
+    recordedAt: new Date().toISOString(), environment: environment,
+    scriptId: scriptId, sourceCommit: commit.toLowerCase(), gasVersion: version, testPointId: pointId,
+    sourceDescription: 'buildReply output; individual TDX, municipal and Maps responses are not independently attested by this diagnostic',
+    sourceMetadataIndependentlyVerified: false,
+    lineSchemaVerified: false, lineDeliveryVerified: false, actualGoogleSheetsWriteVerified: false,
+    expectation: expectation, messageCount: messages.length, cardCount: cards.length, fallbackCount: fallback.length,
+    checks: [
+      { name: 'parking-card-structure', outcome: cards.length ? 'passed' : 'not_exercised', observed: cards.length },
+      { name: 'static-fallback', outcome: fallback.length ? 'passed' : 'not_exercised', observed: fallback.length,
+        reason: fallback.length ? 'Information-only cards have no navigation footer' : 'No Static Fallback was observed; no integration PASS is claimed' },
+      { name: 'empty-result-text', outcome: expectation === 'empty' ? 'passed' : 'not_exercised' }
+    ]
+  };
+  // No raw test coordinates, token, user ID or response body is logged here.
+  Logger.log('[PASS] parking diagnostic ' + receipt.status);
+  Logger.log('PAPAKING_PARKING_DIAGNOSTIC ' + JSON.stringify(receipt));
+  return receipt;
 }
 
 // Offline regression test for the NTPC static-road fallback card.
