@@ -1,0 +1,91 @@
+name: Offline verification
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: offline-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  offline-tests:
+    name: Parks, GAS syntax and sponsor Worker
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source without retained credentials
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24.19.0'
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: '3.12'
+
+      - name: Install pinned XLSX reader
+        run: python -m pip install --disable-pip-version-check -r tools/requirements-park-export.txt
+
+      - name: Install locked Worker dependencies
+        id: worker-deps
+        working-directory: sponsor-worker
+        run: npm ci --no-audit --no-fund
+
+      - name: Check GAS, tools and Python syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for file in gas/*.js tools/*.mjs; do
+            node --check "$file"
+          done
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          ast.parse(Path('tools/import-park-workbook.py').read_text())
+          PY
+          git diff --check
+
+      - name: Run all park and webhook regressions with synthetic data
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          node --test --test-reporter=tap test/parks/*.test.mjs | tee "$PAPAKING_CI_RESULTS/parks.tap"
+
+      - name: Run sponsor Worker tests without cloud services
+        if: ${{ !cancelled() && steps.worker-deps.outcome == 'success' }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        working-directory: sponsor-worker
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          npm test | tee "$PAPAKING_CI_RESULTS/worker.log"
+
+      - name: Confirm checks left tracked source unchanged
+        run: git diff --exit-code
+
+      - name: Retain test logs, including failures
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: offline-verification-${{ github.run_id }}
+          path: ${{ runner.temp }}/papaking-ci-results
+          if-no-files-found: ignore
+          retention-days: 14
