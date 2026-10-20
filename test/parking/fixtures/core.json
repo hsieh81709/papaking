@@ -1,0 +1,133 @@
+{
+  "provenance": "Synthetic fixed data; not real users, live API captures or official availability.",
+  "origin": {
+    "lat": 25.00049,
+    "lon": 121.46049
+  },
+  "spots": [
+    {
+      "SpaceType": 1,
+      "ParkingSegmentID": "S1",
+      "Position": {
+        "PositionLat": 25.001,
+        "PositionLon": 121.461
+      }
+    },
+    {
+      "SpaceType": 1,
+      "ParkingSegmentID": "S1",
+      "Position": {
+        "PositionLat": 25.002,
+        "PositionLon": 121.461
+      }
+    },
+    {
+      "SpaceType": 2,
+      "ParkingSegmentID": "MOTO",
+      "Position": {
+        "PositionLat": 25.0005,
+        "PositionLon": 121.4605
+      }
+    },
+    {
+      "SpaceType": 1,
+      "ParkingSegmentID": "FAR",
+      "Position": {
+        "PositionLat": 25.02,
+        "PositionLon": 121.46
+      }
+    }
+  ],
+  "parks": [
+    {
+      "CarParkName": {
+        "Zh_tw": "合成近場"
+      },
+      "Address": "合成地址甲",
+      "CarParkPosition": {
+        "PositionLat": 25.001,
+        "PositionLon": 121.461
+      }
+    },
+    {
+      "CarParkName": {
+        "Zh_tw": "合成遠場"
+      },
+      "Address": "合成地址乙",
+      "CarParkPosition": {
+        "PositionLat": 25.005,
+        "PositionLon": 121.465
+      }
+    },
+    {
+      "CarParkName": {
+        "Zh_tw": "範圍外"
+      },
+      "CarParkPosition": {
+        "PositionLat": 25.02,
+        "PositionLon": 121.46
+      }
+    }
+  ],
+  "ntpcStatic": [
+    {
+      "ID": "N1",
+      "NAME": "合成市府停車場",
+      "ADDRESS": "合成地址",
+      "TW97X": "296302.789883",
+      "TW97Y": "2765976.789602",
+      "TOTALCAR": "20",
+      "PAYEX": "每小時20元;其他"
+    }
+  ],
+  "ntpcLive": [
+    {
+      "ID": "N1",
+      "AVAILABLECAR": "7"
+    },
+    {
+      "ID": "N2",
+      "AVAILABLECAR": "0"
+    },
+    {
+      "ID": "NEG",
+      "AVAILABLECAR": "-9"
+    }
+  ],
+  "projection": {
+    "x": 296302.789883,
+    "y": 2765976.789602,
+    "lat": 25.001091424328948,
+    "lon": 121.45871687039443,
+    "source": "Independent PROJ EPSG:3826 -> EPSG:4326 reference; tolerance 0.00001 degrees"
+  },
+  "klcgHtml": "<tr><td>合成新場</td><td>7</td><td>2026-10-20 11:59</td></tr><tr><td>合成舊場</td><td>8</td><td>2026-10-18 12:00</td></tr><tr><td>合成未來場</td><td>9</td><td>2026-10-22 12:00</td></tr><tr><td>合成秒數場</td><td>3</td><td>2026-10-20 11:58:30</td></tr>",
+  "driveRpc": [
+    [
+      [
+        null,
+        null,
+        [
+          500,
+          "500公尺"
+        ]
+      ]
+    ]
+  ],
+  "directions": {
+    "routes": [
+      {
+        "legs": [
+          {
+            "duration": {
+              "value": 120
+            },
+            "distance": {
+              "value": 650
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
