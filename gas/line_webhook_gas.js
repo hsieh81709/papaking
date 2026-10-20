@@ -64,18 +64,14 @@ var KLCG_LIVE_STALE_MS = 24 * 60 * 60 * 1000
 // Google Maps Platform 條款只允許 geocode 座標暫存 30 天，到期重查（22 座場站一年不到 300 次配額）
 var GEOCODE_TTL_MS = 30 * 24 * 60 * 60 * 1000
 var SEARCH_RADIUS_KM = 1.0
-// TDX NearBy 回的是靜態基本資料（沒有剩餘位），按位置格子快取 6h 省進階 API 點數：
-// 格子取小數 3 位（約 110m）。TDX NearBy 的搜尋半徑上限是 1,000m，
-// 因此即使為了格子中心偏移預留 NEARBY_GRID_PAD_KM，實際送出的半徑也必須限制在 1,000m；
-// 回來再用使用者真實座標過濾半徑並取最近 N 筆，結果與直接查一樣
+// TDX NearBy 靜態基本資料依完整查詢座標快取 6h（不含即時剩餘）。
+// API 半徑上限 1,000m；回來再以同一位置過濾距離並取最近 N 筆。
 var NEARBY_CACHE_SECONDS = 21600
 var NEARBY_CACHE_MAX_CHARS = 30000   // CacheService 單筆 100KB；全中文也不會超過
 var NEARBY_EMPTY_CACHE_SECONDS = 1800   // 404（範圍內沒有）快取短一點，暫時性異常不會卡 6 小時
-var NEARBY_GRID_DECIMALS = 3
-var NEARBY_GRID_PAD_KM = 0.1
 var ONSTREET_TOP = 10   // 路邊：最近 10 個格位再依路段分組
 var CARPARK_TOP = 5     // 停車場：TDX 最多 5 座
-// 向 TDX 多要幾筆：格心離使用者最遠約 75m，格心排序的前幾名不一定是使用者的前幾名，候選多一些再本地重排
+// 向 TDX 多要候選，再依小客車車種與有效座標篩選、本地重排。
 var ONSTREET_FETCH = 30
 var CARPARK_FETCH = 10
 // Google 地圖搜尋 RPC（沒有金鑰、非公開介面）補 TDX 與市府資料都沒有的私營場站。
@@ -330,7 +326,7 @@ function consumeQuota(source) {
   if (!MONTHLY_QUOTA && !MONTHLY_BUDGET) return null;
   var prefix = quotaPrefix();
   purgeOldQuotaKeys(prefix);
-  var id = source.userId || source.groupId || source.roomId || '';
+  var id = source.userId || ''; // 群組／聊天室 ID 不是使用者 ID，不套個人額度或白名單
   var listed = QUOTA_WHITELIST.indexOf(id) >= 0;
   var totalKey = prefix + 'total';
   var total = Number(PROPS.getProperty(totalKey)) || 0;
@@ -544,11 +540,18 @@ function getTDXToken(keyIndex) {
   var cached = cache.get(cacheKey);
   if (cached) return cached;
 
-  var response = UrlFetchApp.fetch(AUTH_URL, {
-    method: 'post',
-    payload: { grant_type: 'client_credentials', client_id: key.id, client_secret: key.secret },
-    muteHttpExceptions: true
-  });
+  var response;
+  try {
+    response = UrlFetchApp.fetch(AUTH_URL, {
+      method: 'post',
+      payload: { grant_type: 'client_credentials', client_id: key.id, client_secret: key.secret },
+      muteHttpExceptions: true
+    });
+  } catch (err) {
+    Logger.log('TDX auth 連線失敗');
+    return null;
+  }
+  if (response.getResponseCode() !== 200) return null;
   // auth 端點掛掉時回的是 HTML 不是 JSON；這裡回 null 讓 tdxFetch 換下一把，而不是整段查詢中斷
   var data;
   try {
@@ -612,7 +615,7 @@ function tdxFetch(url) {
         muteHttpExceptions: true
       });
     } catch (err) {
-      Logger.log('金鑰 ' + keyIndex + ' 連線失敗: ' + err + '，換下一把');
+      Logger.log('金鑰 ' + keyIndex + ' 連線失敗，換下一把');
       markTDXKeyExhausted(keyIndex);
       continue;
     }
@@ -620,6 +623,7 @@ function tdxFetch(url) {
     var code = response.getResponseCode();
     logTDXResponse(url, response);
     if (code !== 429 && code !== 401 && code !== 403) return response;
+    if (code === 401 || code === 403) CacheService.getScriptCache().remove('tdx_token_' + TDX_KEYS[keyIndex].id);
     Logger.log('金鑰 ' + keyIndex + ' 回應 ' + code + '，換下一把');
     markTDXKeyExhausted(keyIndex);
   }
@@ -627,8 +631,7 @@ function tdxFetch(url) {
   return { getResponseCode: function () { return 429; }, getContentText: function () { return ''; } };
 }
 
-// TDX 診斷紀錄：URL 不含 Authorization header，因此不會寫入 access token、client id 或 client secret。
-// 回應本文只保留前 2,000 字，足以看見 TDX 的 4xx 錯誤說明，也避免執行紀錄被正常資料淹沒。
+// 只記端點類別與狀態；URL 含查詢位置、錯誤本文可能回顯位置與身分，不進執行日誌。
 function tdxEndpointName(url) {
   if (url.indexOf('/Parking/OnStreet/ParkingSpot/NearBy') >= 0) return 'OnStreet ParkingSpot NearBy';
   if (url.indexOf('/Parking/OffStreet/CarPark/NearBy') >= 0) return 'OffStreet CarPark NearBy';
@@ -636,13 +639,12 @@ function tdxEndpointName(url) {
 }
 
 function logTDXRequest(url) {
-  Logger.log('TDX request [' + tdxEndpointName(url) + ']: ' + url);
+  Logger.log('TDX request [' + tdxEndpointName(url) + ']');
 }
 
 function logTDXResponse(url, response) {
   var status = response ? response.getResponseCode() : 0;
-  var body = response ? response.getContentText() : '';
-  Logger.log('TDX response [' + tdxEndpointName(url) + '] status=' + status + ' body=' + body.slice(0, 2000));
+  Logger.log('TDX response [' + tdxEndpointName(url) + '] status=' + status);
 }
 
 // 同時發出多個請求；整批丟例外時退回逐一發送，單一請求失敗回 null
@@ -650,13 +652,13 @@ function fetchAllSafe(requests) {
   try {
     return UrlFetchApp.fetchAll(requests);
   } catch (err) {
-    Logger.log('fetchAll 失敗，改逐一發送: ' + err);
+    Logger.log('fetchAll 失敗，改逐一發送');
   }
   return requests.map(function (req) {
     try {
       return UrlFetchApp.fetch(req.url, req);
     } catch (err) {
-      Logger.log('請求失敗 ' + req.url.slice(0, 80) + ': ' + err);
+      Logger.log('外部請求連線失敗');
       return null;
     }
   });
@@ -664,22 +666,14 @@ function fetchAllSafe(requests) {
 
 // 多個 TDX GET 併發：各挑一把金鑰同時發出；哪一筆撞到金鑰問題就標記用滿，退回 tdxFetch 換把重試。
 // extraRequests 是不需要 TDX 金鑰的其他請求，搭同一批發出，回傳陣列接在 TDX 結果後面（失敗為 null）
-// 格子中心座標：快取鍵與 TDX 查詢都用它，同一格的查詢才會共用同一筆快取
-function nearbyGrid(lat, lon) {
-  var f = Math.pow(10, NEARBY_GRID_DECIMALS);
-  return { lat: Math.round(lat * f) / f, lon: Math.round(lon * f) / f };
-}
-
-// 讀格子快取。hits[i] 是命中的回應內容（沒命中為 null），missUrls 是要打 TDX 的網址（依 hits 順序只含未命中的）
+// 使用完整查詢座標作為快取鍵與 NearBy 中心。1km 是 API 上限，不能靠擴大半徑補格心偏移。
+// 同一位置仍可命中靜態快取；不同位置不共用可能漏掉邊界資料的格子。
 function nearbyCached(lat, lon) {
-  var g = nearbyGrid(lat, lon);
-  var suffix = g.lat.toFixed(NEARBY_GRID_DECIMALS) + '_' + g.lon.toFixed(NEARBY_GRID_DECIMALS);
-  // TDX Nearby 文件規定搜尋半徑最大 1,000m；舊版在 1km 查詢再加 100m 後送 1,100m，會得到 HTTP 400。
-  var radiusM = Math.min(1000, Math.round((SEARCH_RADIUS_KM + NEARBY_GRID_PAD_KM) * 1000));
-  Logger.log('TDX NearBy coordinates: lat=' + lat + ', lng=' + lon + '; gridLat=' + g.lat + ', gridLng=' + g.lon + '; radiusM=' + radiusM);
-  // 鍵帶半徑與筆數：改設定後舊快取自然失效，不會讀到較小的候選集合
-  var keys = ['nearby_spot_' + radiusM + '_' + ONSTREET_FETCH + '_' + suffix, 'nearby_park_' + radiusM + '_' + CARPARK_FETCH + '_' + suffix];
-  var filter = encodeURIComponent('nearby(' + g.lat + ',' + g.lon + ',' + radiusM + ')');
+  var suffix = String(lat) + '_' + String(lon);
+  var radiusM = Math.min(1000, Math.round(SEARCH_RADIUS_KM * 1000));
+  Logger.log('TDX NearBy radiusM=' + radiusM);
+  var keys = ['nearby_origin_spot_' + radiusM + '_' + ONSTREET_FETCH + '_' + suffix, 'nearby_origin_park_' + radiusM + '_' + CARPARK_FETCH + '_' + suffix];
+  var filter = encodeURIComponent('nearby(' + lat + ',' + lon + ',' + radiusM + ')');
   var urls = [
     BASE_URL + '/Parking/OnStreet/ParkingSpot/NearBy?$spatialFilter=' + filter + '&$format=JSON&$top=' + ONSTREET_FETCH,
     BASE_URL + '/Parking/OffStreet/CarPark/NearBy?$spatialFilter=' + filter + '&$format=JSON&$top=' + CARPARK_FETCH
@@ -717,13 +711,18 @@ function textResponse(code, text) {
 }
 
 // 用使用者真實座標過濾半徑內的資料並依直線距離取最近 n 筆（TDX 查詢是以格子中心算的，這裡校正回來）。
-// 沒有座標的資料 TDX 既然回了就是在範圍內，跟舊版一樣保留，排在最後
+// 缺少、非有限數字或超出經緯度範圍的資料無法驗證距離，不納入導航結果。
+function validParkingPosition(lat, lon) {
+  return typeof lat === 'number' && isFinite(lat) && Math.abs(lat) <= 90 &&
+         typeof lon === 'number' && isFinite(lon) && Math.abs(lon) <= 180;
+}
+
 function nearestWithin(lat, lon, items, posOf, n) {
   return items
     .map(function (it) {
-      var p = posOf(it);
-      var d = calculateDistance(lat, lon, p.PositionLat, p.PositionLon);
-      return { it: it, d: isNaN(d) ? SEARCH_RADIUS_KM : d };
+      var p = posOf(it) || {};
+      var d = validParkingPosition(p.PositionLat, p.PositionLon) ? calculateDistance(lat, lon, p.PositionLat, p.PositionLon) : Infinity;
+      return { it: it, d: d };
     })
     .filter(function (x) { return x.d <= SEARCH_RADIUS_KM; })
     .sort(function (a, b) { return a.d - b.d; })
@@ -754,7 +753,10 @@ function tdxFetchAll(urls, extraRequests) {
   var tdxResponses = urls.map(function (url, i) {
     var code = responses[i] ? responses[i].getResponseCode() : 0;
     if (code && code !== 429 && code !== 401 && code !== 403) return responses[i];
-    if (keyIndexes[i] >= 0) markTDXKeyExhausted(keyIndexes[i]);
+    if (keyIndexes[i] >= 0) {
+      if (code === 401 || code === 403) CacheService.getScriptCache().remove('tdx_token_' + TDX_KEYS[keyIndexes[i]].id);
+      markTDXKeyExhausted(keyIndexes[i]);
+    }
     return tdxFetch(url);
   });
   return tdxResponses.concat(batch.slice(requests.length));
@@ -979,6 +981,7 @@ function ntpcRowsFromPages(dataset, responses) {
   for (var i = 0; i < responses.length; i++) {
     if (!responses[i] || responses[i].getResponseCode() !== 200) return null;
     var page = JSON.parse(responses[i].getContentText());
+    if (!Array.isArray(page)) return null;
     lastCount = page.length;
     rows = rows.concat(page);
     if (lastCount < NTPC_PAGE_SIZE) return rows;
@@ -987,10 +990,11 @@ function ntpcRowsFromPages(dataset, responses) {
     var res = UrlFetchApp.fetch(ntpcPageUrl(dataset, p), { muteHttpExceptions: true });
     if (res.getResponseCode() !== 200) return null;
     var more = JSON.parse(res.getContentText());
+    if (!Array.isArray(more)) return null;
     lastCount = more.length;
     rows = rows.concat(more);
   }
-  return rows;
+  return lastCount < NTPC_PAGE_SIZE ? rows : null; // 滿載到安全上限仍不能宣稱完整
 }
 
 // 新北路外停車場靜態清單 → [[ID, 名稱, 地址, lat, lon, 收費, 汽車格數], ...]，快取 6h、切塊存
@@ -1042,8 +1046,9 @@ function parseNtpcLive(rows) {
     return live;
   }
   for (var i = 0; i < rows.length; i++) {
-    var n = Number(rows[i].AVAILABLECAR);
-    if (rows[i].ID && n >= 0) live[rows[i].ID] = n;
+    var raw = rows[i].AVAILABLECAR;
+    var n = typeof raw === 'number' || (typeof raw === 'string' && raw.trim() !== '') ? Number(raw) : NaN;
+    if (rows[i].ID && isFinite(n) && n >= 0) live[rows[i].ID] = n;
   }
   LIVE.ntpc = live;
   return live;
@@ -1165,8 +1170,11 @@ function parseKlcgLive(html) {
   var row = /<td>([^<]+)<\/td>\s*<td>(\d+)<\/td>\s*<td>([^<]+)<\/td>/g;
   var m;
   while ((m = row.exec(html)) !== null) {
-    var updated = new Date(m[3].trim().replace(' ', 'T') + ':00+08:00').getTime();
-    if (isNaN(updated) || Date.now() - updated > KLCG_LIVE_STALE_MS) continue;
+    var stamp = m[3].trim();
+    if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(stamp)) continue;
+    var updated = new Date(stamp.replace(' ', 'T') + '+08:00').getTime();
+    var age = Date.now() - updated;
+    if (isNaN(updated) || age < 0 || age > KLCG_LIVE_STALE_MS) continue;
     live[klcgNormalizeName(m[1])] = Number(m[2]);
   }
   LIVE.klcg = live;
@@ -1469,7 +1477,7 @@ function rankSections(lat, lon, sections) {
   var cache = CacheService.getScriptCache();
   var pending = [];
   var prepared = sections.map(function (sec) {
-    var entries = sec.entries.filter(function (e) { return typeof e.lat === 'number' && typeof e.lon === 'number'; });
+    var entries = sec.entries.filter(function (e) { return validParkingPosition(e.lat, e.lon); });
     entries.forEach(function (e) { e.km = calculateDistance(lat, lon, e.lat, e.lon); });
     entries.sort(function (a, b) { return a.km - b.km; });
     var count = Math.min(sec.driveCount, entries.length);
@@ -1482,7 +1490,10 @@ function rankSections(lat, lon, sections) {
     var cached = pending.length ? cache.getAll(pending.map(function (p) { return p.key; })) : {};
     var misses = pending.filter(function (p) {
       if (!cached[p.key]) return true;
-      p.entry.drive = JSON.parse(cached[p.key]);
+      var drive = JSON.parse(cached[p.key]);
+      if (!drive || typeof drive.seconds !== 'number' || !isFinite(drive.seconds) || drive.seconds < 0 ||
+          typeof drive.meters !== 'number' || !isFinite(drive.meters) || drive.meters < 0) return true;
+      p.entry.drive = drive;
       return false;
     });
     // 沒快取的一起用 RPC 併發算，共用同一份每次執行的預算；RPC 整批失敗就把預算還回去讓逐筆版接手
@@ -1533,7 +1544,7 @@ function parseOnStreet(lat, lon, response) {
 
     var items = JSON.parse(response.getContentText());
     if (!Array.isArray(items) || !items.length) return { error: '目前沒有查詢到路邊停車格' };
-    items = nearestWithin(lat, lon, items, function (it) { return it.Position || {}; }, ONSTREET_TOP);
+    items = nearestWithin(lat, lon, items.filter(function (it) { return it && it.SpaceType === 1; }), function (it) { return it.Position || {}; }, ONSTREET_TOP);
 
     // 只保留小客車停車格 (SpaceType = 1)，再依 ParkingSegmentID 群組
     var segments = {};
