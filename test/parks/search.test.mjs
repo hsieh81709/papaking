@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {harness,fixture,plain} from './helpers.mjs';
 function setup() {
  const h=harness(), {ps}=fixture(h,['P0']);ps.data.length=1;
- for(let i=8;i>=0;i--)ps.data.push(['P'+i,'新北市','板橋區','測試公園'+i,'',25+i*.004,121.46,'','','','','','','可用','']);
+ for(let i=8;i>=0;i--)ps.data.push(['P'+i,'臺北市','萬華區','測試公園'+i,'',25+i*.004,121.46,'','','','','','','可用','']);
  const fs=h.addSheet('公園設施',[
   ['公園ID','可查詢遊具類別（依休憩設施）','遊戲場名稱','其他設施'],
   ['P0','溜滑梯','普通遊戲場','鞦韆'],
