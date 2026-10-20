@@ -17,7 +17,7 @@ concurrency:
 
 jobs:
   offline-tests:
-    name: Parks, GAS syntax and sponsor Worker
+    name: Parks, parking, GAS syntax and sponsor Worker
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -67,6 +67,16 @@ jobs:
           set -euo pipefail
           mkdir -p "$PAPAKING_CI_RESULTS"
           node --test --test-reporter=tap test/parks/*.test.mjs | tee "$PAPAKING_CI_RESULTS/parks.tap"
+
+      - name: Run parking core regressions with fixed fixtures
+        if: ${{ !cancelled() }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          node --test --test-reporter=tap test/parking/*.test.mjs | tee "$PAPAKING_CI_RESULTS/parking.tap"
 
       - name: Run sponsor Worker tests without cloud services
         if: ${{ !cancelled() && steps.worker-deps.outcome == 'success' }}
