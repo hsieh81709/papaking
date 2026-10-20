@@ -1,4 +1,4 @@
-import unittest,sys,csv,io
+import unittest,sys,csv,io,json,tempfile,subprocess,hashlib
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'tools'))
 from park_source_quality import parse_csv,match_park,feature_evidence,twd97
@@ -50,4 +50,19 @@ class EvidenceTests(unittest.TestCase):
  def test_explicit_noninclusive_and_removed_unknown(self):
   self.page['facilityDescription']='非共融遊戲場。鞦韆已移除。';self.assertTrue(all(r['status']=='UNKNOWN' for r in feature_evidence(self.page,self.match)))
  def test_presence_never_approves_position(self):self.assertTrue(all(not r['publicationApproved'] and not r['entranceVerified'] and r['count'] is None for r in feature_evidence(self.page,self.match)))
+class CLITests(unittest.TestCase):
+ def test_fixture_pages_and_csv_end_to_end(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   p=Path(tmp);source=p/'official.csv';source.write_bytes(CSVTests().blob());digest=hashlib.sha256(source.read_bytes()).hexdigest();snapshot=p/'snapshot.json'
+   snapshot.write_text(json.dumps({'parks':[{'公園ID':'NP-1','縣市':'新北市','公園名稱':'公園(公1)','行政區':'板橋區','地址':'甲路1號','管理單位':'板橋區公所','緯度':'','經度':'','資料狀態':'待定位'}],'facilities':[]}))
+   root=Path(__file__).resolve().parents[2];out=p/'output'
+   subprocess.run([sys.executable,str(root/'tools/park-official-audit.py'),str(source),str(snapshot),str(out),'--website-pages',str(Path(__file__).parent/'fixtures/pages.json')],check=True,capture_output=True)
+   summary=json.loads((out/'summary.json').read_text());self.assertEqual(summary['confirmedFeatureEvidenceRows'],3);self.assertEqual(summary['productionCoordinatesApproved'],0);self.assertFalse(summary['priorQualityAvailable']);self.assertEqual(hashlib.sha256(source.read_bytes()).hexdigest(),digest)
+   with (out/'website-pages.csv').open(encoding='utf-8-sig') as f:statuses=[r['matchStatus'] for r in csv.DictReader(f)]
+   self.assertEqual(statuses,['確定匹配','疑似匹配','無法匹配'])
+ def test_missing_snapshot_fails_without_claiming_validation(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   p=Path(tmp);source=p/'official.csv';source.write_bytes(CSVTests().blob());root=Path(__file__).resolve().parents[2]
+   result=subprocess.run([sys.executable,str(root/'tools/park-official-audit.py'),str(source),str(p/'missing.json'),str(p/'out')],capture_output=True)
+   self.assertNotEqual(result.returncode,0);self.assertFalse((p/'out/summary.json').exists())
 if __name__=='__main__':unittest.main(verbosity=2)

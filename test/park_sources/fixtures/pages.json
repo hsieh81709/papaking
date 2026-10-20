@@ -1,0 +1,5 @@
+[
+ {"url":"https://www.ntparks.tw/synthetic-one.html","name":"公園(公1)","district":"板橋區","address":"甲路1號","management":"板橋區公所","httpStatus":200,"operatorVerified":true,"termsReviewed":true,"retrievedAt":"2026-10-20T00:00:00Z","facilityDescription":"園內有滑梯。鞦韆與沙坑。","fixtureOnly":true},
+ {"url":"https://www.ntparks.tw/synthetic-suspect.html","name":"公園(公1)","district":"板橋區","address":"另一地址","httpStatus":200,"operatorVerified":true,"termsReviewed":true,"retrievedAt":"2026-10-20T00:00:00Z","facilityDescription":"共融遊戲場。","fixtureOnly":true},
+ {"url":"https://www.ntparks.tw/synthetic-unmatched.html","name":"另一公園","district":"土城區","address":"乙路","httpStatus":200,"operatorVerified":true,"termsReviewed":true,"retrievedAt":"2026-10-20T00:00:00Z","facilityDescription":"攀爬設施。","fixtureOnly":true}
+]
