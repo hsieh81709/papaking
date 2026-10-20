@@ -4,6 +4,12 @@
 
 本文件是後續工作提案；**未建立 GitHub Issues、未合併 main、未部署、未寫入 Google Sheets**。現況、測試邊界與403證據見 [PROJECT_STATUS.md](PROJECT_STATUS.md)。以下 PK-xx 為本文件草案編號，不是 GitHub 已存在的 Issue 號；建立時先人工去重，因本次 GitHub REST API 不可用，無法查明所有既有 Issues。
 
+## PK-13 本輪離線驗收
+
+依 PK-13 新增固定合成 fixtures 與 72 個停車核心測試：TDX 雙路／輪替、1km 格心偏移、NTPC 分頁與即時資料隔離、TWD97、快取 TTL、基隆過期、開車備援、月額度及群組限制。先執行紅燈（58 項中 17 fail；補充輪 72 項中 3 fail），再修正重現缺口，最後 **停車72、公園157、Worker25，共254項全數通過**。既有公園與Worker檔案未修改。
+
+CI已加入停車 suite；主要行為變更是使用實際起點的1km查詢與快取（鄰近點命中率會下降）、失效token清除、來源有效性及群組個人額度修正。完整覆蓋、Commit、重跑方式與尚未驗證的線上／併行邊界見 [PK13驗收紀錄](verification/PK13.md)。沒有部署、正式資料寫入或main合併，也未將本機通過視為遠端Actions成功。
+
 ## 本輪實作進度（PK-04～PK-07）
 
 | 項目 | 目前進度 | 尚不代表完成的部分 |

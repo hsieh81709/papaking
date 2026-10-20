@@ -1,0 +1,276 @@
+PK-13 offline verification, 2026-10-20
+Branch: feature/flex-message-v2
+Baseline: 937b61a7326f14cf41d9d9948587eebb2e6de76b
+Node: v24.19.0; Python: 3.12.14
+Projection reference: pyproj 3.7.2 / PROJ 9.5.1
+All fixtures synthetic. No remote services or production writes.
+
+RED: tests f640541, application baseline; exit 1
+ok 1 - TDX road grouping counts only cars within 1km
+not ok 2 - car filtering precedes nearest-ten truncation
+ok 3 - TDX offstreet parse orders by actual distance and excludes outside radius
+ok 4 - parseOnStreet 404 has explicit result
+ok 5 - parseParking 404 has explicit result
+ok 6 - parseOnStreet 429 has explicit result
+ok 7 - parseParking 429 has explicit result
+ok 8 - parseOnStreet 500 has explicit result
+ok 9 - parseParking 500 has explicit result
+ok 10 - malformed TDX <html>error</html> yields explicit failure or empty
+ok 11 - malformed TDX null yields explicit failure or empty
+ok 12 - malformed TDX {} yields explicit failure or empty
+not ok 13 - unknown or nonfinite coordinates cannot claim within 1km
+not ok 14 - 1km API query uses actual origin; grid shift must not omit edge candidate
+not ok 15 - nearby cache isolates different actual origins inside same old grid
+ok 16 - TDX 429 rotates to next key and preserves success
+ok 17 - TDX 401 rotates to next key and preserves success
+ok 18 - TDX 403 rotates to next key and preserves success
+not ok 19 - 401 invalidates cached auth token so next minute can reauthenticate
+not ok 20 - TDX auth transport failure rotates instead of aborting reply
+ok 21 - TDX auth HTML failure rotates
+ok 22 - all keys exhausted returns bounded 429 with no network
+ok 23 - TDX batch retries only failing slot and preserves extras alignment
+ok 24 - nearby cache acceptance 200 []
+ok 25 - nearby cache acceptance 404 []
+ok 26 - nearby cache acceptance 200 {}
+ok 27 - nearby cache acceptance 200 "bad"
+ok 28 - nearby cache acceptance 429 []
+ok 29 - nearby cache acceptance 500 []
+ok 30 - chunk cache misses if any piece evicted
+ok 31 - NTPC reads full three pages and tail in order
+ok 32 - NTPC page 500 never caches half static list
+ok 33 - NTPC page 429 never caches half static list
+not ok 34 - NTPC full page at safety cap is incomplete, not a complete snapshot
+not ok 35 - NTPC non-array page is rejected rather than concatenated
+ok 36 - TWD97 independent projection reference within 1m
+ok 37 - NTPC static cache excludes live data and live refreshes between events
+not ok 38 - NTPC missing availability is unknown, real zero retained
+ok 39 - NTPC failed live leaves explicit unknown and short retry marker
+ok 40 - Keelung stale data excluded; recent minute timestamp retained
+not ok 41 - Keelung future timestamp cannot claim fresh availability
+not ok 42 - Keelung supports seconds timestamp without appending duplicate seconds
+ok 43 - expired geocode refreshes after 30 days, fresh entry does not call Maps
+ok 44 - Google drive RPC fixed nested response parses driving mode and meters
+ok 45 - Google total failure uses Maps, Maps failure uses straight distance
+ok 46 - drive cache avoids network until TTL expires
+not ok 47 - invalid cached drive duration cannot render negative travel time
+not ok 48 - NaN coordinates removed before ranking
+ok 49 - drive budget capped across sections and exhausted uses distance
+ok 50 - monthly personal cap, hashed keys and next Taipei month reset
+ok 51 - public 85 percent budget and whitelist reserve
+not ok 52 - group without userId shares global budget only
+not ok 53 - room without userId shares global budget only
+ok 54 - identified group user shares personal cap across groups
+ok 55 - new user storage failure refuses query without logging identity
+ok 56 - group and room id command never broadcasts userId
+not ok 57 - parking diagnostics never log origin or echoed user identifiers
+not ok 58 - full buildReply reuses static cache but refreshes live between two events
+# tests 58
+# pass 41
+# fail 17
+# cancelled 0
+# skipped 0
+# todo 0
+
+RED supplemental: 8546d7b; exit 1
+ok 1 - TDX road grouping counts only cars within 1km
+ok 2 - car filtering precedes nearest-ten truncation
+ok 3 - TDX offstreet parse orders by actual distance and excludes outside radius
+ok 4 - parseOnStreet 404 has explicit result
+ok 5 - parseParking 404 has explicit result
+ok 6 - parseOnStreet 429 has explicit result
+ok 7 - parseParking 429 has explicit result
+ok 8 - parseOnStreet 500 has explicit result
+ok 9 - parseParking 500 has explicit result
+ok 10 - malformed TDX <html>error</html> yields explicit failure or empty
+ok 11 - malformed TDX null yields explicit failure or empty
+ok 12 - malformed TDX {} yields explicit failure or empty
+ok 13 - unknown or nonfinite coordinates cannot claim within 1km
+ok 14 - 1km API query uses actual origin; grid shift must not omit edge candidate
+ok 15 - nearby cache isolates different actual origins inside same old grid
+ok 16 - TDX 429 rotates to next key and preserves success
+ok 17 - TDX 401 rotates to next key and preserves success
+ok 18 - TDX 403 rotates to next key and preserves success
+ok 19 - 401 invalidates cached auth token so next minute can reauthenticate
+ok 20 - TDX auth transport failure rotates instead of aborting reply
+ok 21 - TDX auth HTML failure rotates
+ok 22 - all keys exhausted returns bounded 429 with no network
+ok 23 - TDX batch retries only failing slot and preserves extras alignment
+ok 24 - nearby cache acceptance 200 []
+ok 25 - nearby cache acceptance 404 []
+ok 26 - nearby cache acceptance 200 {}
+ok 27 - nearby cache acceptance 200 "bad"
+ok 28 - nearby cache acceptance 429 []
+ok 29 - nearby cache acceptance 500 []
+ok 30 - chunk cache misses if any piece evicted
+ok 31 - NTPC reads full three pages and tail in order
+ok 32 - NTPC page 500 never caches half static list
+ok 33 - NTPC page 429 never caches half static list
+ok 34 - NTPC full page at safety cap is incomplete, not a complete snapshot
+ok 35 - NTPC non-array page is rejected rather than concatenated
+ok 36 - TWD97 independent projection reference within 1m
+ok 37 - NTPC static cache excludes live data and live refreshes between events
+ok 38 - NTPC missing availability is unknown, real zero retained
+ok 39 - NTPC failed live leaves explicit unknown and short retry marker
+ok 40 - Keelung stale data excluded; recent minute timestamp retained
+ok 41 - Keelung future timestamp cannot claim fresh availability
+ok 42 - Keelung supports seconds timestamp without appending duplicate seconds
+ok 43 - expired geocode refreshes after 30 days, fresh entry does not call Maps
+ok 44 - Google drive RPC fixed nested response parses driving mode and meters
+ok 45 - Google total failure uses Maps, Maps failure uses straight distance
+ok 46 - drive cache avoids network until TTL expires
+ok 47 - invalid cached drive duration cannot render negative travel time
+ok 48 - NaN coordinates removed before ranking
+ok 49 - drive budget capped across sections and exhausted uses distance
+ok 50 - monthly personal cap, hashed keys and next Taipei month reset
+ok 51 - public 85 percent budget and whitelist reserve
+ok 52 - group without userId shares global budget only
+ok 53 - room without userId shares global budget only
+ok 54 - identified group user shares personal cap across groups
+ok 55 - new user storage failure refuses query without logging identity
+ok 56 - group and room id command never broadcasts userId
+ok 57 - parking diagnostics never log origin or echoed user identifiers
+ok 58 - full buildReply reuses static cache but refreshes live between two events
+ok 59 - full buildReply upstream 401 has explicit text without phantom cards
+ok 60 - full buildReply upstream 429 has explicit text without phantom cards
+ok 61 - full buildReply upstream 500 has explicit text without phantom cards
+ok 62 - NTPC tail HTTP failure does not cache prior successful pages
+ok 63 - NTPC malformed JSON or transport failure does not cache static list
+ok 64 - drive corrupt cache falls back to distance without losing reply
+ok 65 - drive RPC partial success leaves failed target at straight distance
+ok 66 - nearby cache write failure still returns fetched responses
+ok 67 - TDX keys are limited to five calls each within one minute
+ok 68 - quota denial prevents data fetch and sends explanation only
+ok 69 - disabled quotas leave no persisted counters
+not ok 70 - new month purges previous counters even if six-hour marker survives midnight
+not ok 71 - existing user counter write failure cannot bypass personal cap
+not ok 72 - Google lookup and directions transport errors do not echo origin in logs
+# tests 72
+# pass 69
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+
+GREEN parking: 928706e; exit 0
+ok 1 - TDX road grouping counts only cars within 1km
+ok 2 - car filtering precedes nearest-ten truncation
+ok 3 - TDX offstreet parse orders by actual distance and excludes outside radius
+ok 4 - parseOnStreet 404 has explicit result
+ok 5 - parseParking 404 has explicit result
+ok 6 - parseOnStreet 429 has explicit result
+ok 7 - parseParking 429 has explicit result
+ok 8 - parseOnStreet 500 has explicit result
+ok 9 - parseParking 500 has explicit result
+ok 10 - malformed TDX <html>error</html> yields explicit failure or empty
+ok 11 - malformed TDX null yields explicit failure or empty
+ok 12 - malformed TDX {} yields explicit failure or empty
+ok 13 - unknown or nonfinite coordinates cannot claim within 1km
+ok 14 - 1km API query uses actual origin; grid shift must not omit edge candidate
+ok 15 - nearby cache isolates different actual origins inside same old grid
+ok 16 - TDX 429 rotates to next key and preserves success
+ok 17 - TDX 401 rotates to next key and preserves success
+ok 18 - TDX 403 rotates to next key and preserves success
+ok 19 - 401 invalidates cached auth token so next minute can reauthenticate
+ok 20 - TDX auth transport failure rotates instead of aborting reply
+ok 21 - TDX auth HTML failure rotates
+ok 22 - all keys exhausted returns bounded 429 with no network
+ok 23 - TDX batch retries only failing slot and preserves extras alignment
+ok 24 - nearby cache acceptance 200 []
+ok 25 - nearby cache acceptance 404 []
+ok 26 - nearby cache acceptance 200 {}
+ok 27 - nearby cache acceptance 200 "bad"
+ok 28 - nearby cache acceptance 429 []
+ok 29 - nearby cache acceptance 500 []
+ok 30 - chunk cache misses if any piece evicted
+ok 31 - NTPC reads full three pages and tail in order
+ok 32 - NTPC page 500 never caches half static list
+ok 33 - NTPC page 429 never caches half static list
+ok 34 - NTPC full page at safety cap is incomplete, not a complete snapshot
+ok 35 - NTPC non-array page is rejected rather than concatenated
+ok 36 - TWD97 independent projection reference within 1m
+ok 37 - NTPC static cache excludes live data and live refreshes between events
+ok 38 - NTPC missing availability is unknown, real zero retained
+ok 39 - NTPC failed live leaves explicit unknown and short retry marker
+ok 40 - Keelung stale data excluded; recent minute timestamp retained
+ok 41 - Keelung future timestamp cannot claim fresh availability
+ok 42 - Keelung supports seconds timestamp without appending duplicate seconds
+ok 43 - expired geocode refreshes after 30 days, fresh entry does not call Maps
+ok 44 - Google drive RPC fixed nested response parses driving mode and meters
+ok 45 - Google total failure uses Maps, Maps failure uses straight distance
+ok 46 - drive cache avoids network until TTL expires
+ok 47 - invalid cached drive duration cannot render negative travel time
+ok 48 - NaN coordinates removed before ranking
+ok 49 - drive budget capped across sections and exhausted uses distance
+ok 50 - monthly personal cap, hashed keys and next Taipei month reset
+ok 51 - public 85 percent budget and whitelist reserve
+ok 52 - group without userId shares global budget only
+ok 53 - room without userId shares global budget only
+ok 54 - identified group user shares personal cap across groups
+ok 55 - new user storage failure refuses query without logging identity
+ok 56 - group and room id command never broadcasts userId
+ok 57 - parking diagnostics never log origin or echoed user identifiers
+ok 58 - full buildReply reuses static cache but refreshes live between two events
+ok 59 - full buildReply upstream 401 has explicit text without phantom cards
+ok 60 - full buildReply upstream 429 has explicit text without phantom cards
+ok 61 - full buildReply upstream 500 has explicit text without phantom cards
+ok 62 - NTPC tail HTTP failure does not cache prior successful pages
+ok 63 - NTPC malformed JSON or transport failure does not cache static list
+ok 64 - drive corrupt cache falls back to distance without losing reply
+ok 65 - drive RPC partial success leaves failed target at straight distance
+ok 66 - nearby cache write failure still returns fetched responses
+ok 67 - TDX keys are limited to five calls each within one minute
+ok 68 - quota denial prevents data fetch and sends explanation only
+ok 69 - disabled quotas leave no persisted counters
+ok 70 - new month purges previous counters even if six-hour marker survives midnight
+ok 71 - existing user counter write failure cannot bypass personal cap
+ok 72 - Google lookup and directions transport errors do not echo origin in logs
+# tests 72
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+GREEN preserved parks: exit 0
+# tests 157
+# pass 157
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+GREEN preserved Worker: exit 0
+ℹ tests 25
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+
+Historical archive replay: f640541 = 41 pass/17 fail; 8546d7b = 69 pass/3 fail. Both exit 1; failing names exactly match initial runs.
+Other checks: GAS/tools/test JS syntax, Python AST, actionlint 1.7.7, git diff/show --check passed.
+git diff 937b61a -- test/parks sponsor-worker: empty.
+origin/main read-only ref: 734ace5702736dd069399b1188b4b122d4f5e2fe
+Remote Actions success: not verified.
+
+Fixture SHA-256:
+76203e1269e128cf2cef3b8d61b25a705d087615bc420185ba36eaabe5bdb6f7  test/parking/fixtures/core.json
+
+Commits and name-status (verification docs follow in a separate commit):
+f640541b98dfc21be4068185e549b5f807cf3867 test(parking): reproduce PK-13 core regressions with fixed offline fixtures
+
+A	test/parking/core.test.mjs
+A	test/parking/fixtures/core.json
+A	test/parking/helpers.mjs
+46a57b7265e95157de3fdde51ac33d85021e6a83 fix(parking): correct PK-13 search, rotation and source validity regressions
+
+M	gas/line_webhook_gas.js
+8546d7b07a2a8231d28967b04c3020c09ff3d5a8 test(parking): cover full replies and reproduce quota rollover edge failures
+
+M	test/parking/core.test.mjs
+9748160c0d0136efb4244ce0ee58a3b945f0f2e9 fix(parking): fail closed on quota persistence and isolate monthly cleanup
+
+M	gas/line_webhook_gas.js
+928706e389c9e19f8a71c7abb0fb669746e449e5 ci: include fixed-fixture parking core regressions
+
+M	.github/workflows/offline-tests.yml

@@ -3,6 +3,12 @@
 盤點日期：2026-10-20（Asia/Taipei）。儲存庫：`hsieh81709/papaking`。
 本文件以唯讀 Git 分支、原始碼、設定、既有紀錄及本次測試為依據；正式 GAS、Google Sheets、LINE Webhook 與 `main` 均未變更。建議 Issues 與整合關卡見 [ROADMAP.md](ROADMAP.md)。
 
+## PK-13 本輪離線驗收
+
+依 PK-13 新增固定合成 fixtures 與 72 個停車核心測試：TDX 雙路／輪替、1km 格心偏移、NTPC 分頁與即時資料隔離、TWD97、快取 TTL、基隆過期、開車備援、月額度及群組限制。先執行紅燈（58 項中 17 fail；補充輪 72 項中 3 fail），再修正重現缺口，最後 **停車72、公園157、Worker25，共254項全數通過**。既有公園與Worker檔案未修改。
+
+CI已加入停車 suite；主要行為變更是使用實際起點的1km查詢與快取（鄰近點命中率會下降）、失效token清除、來源有效性及群組個人額度修正。完整覆蓋、Commit、重跑方式與尚未驗證的線上／併行邊界見 [PK13驗收紀錄](verification/PK13.md)。沒有部署、正式資料寫入或main合併，也未將本機通過視為遠端Actions成功。
+
 ## PK-04～PK-07 本輪更新
 
 本輪自 `edab060` 延續：PK-04 選單清除、PK-05 同批結果的 Flex 400 文字備援、PK-06 非空／Static／明確空結果診斷契約已完成程式與離線回歸；PK-07 已新增 [offline-tests.yml](../.github/workflows/offline-tests.yml)。原有121個公園案例未改寫，新增36個，現為 **157／157通過**；Worker **25／25通過**。
