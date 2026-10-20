@@ -59,4 +59,48 @@ class ReviewTests(unittest.TestCase):
   d=self.fixture();d['tables']['公園座標候選'][0]['候選緯度']=25.02;d['tables']['公園座標候選'][1]['候選緯度']=25.02;rows,g=review.prepare(d)
   with tempfile.TemporaryDirectory() as tmp:
    f=Path(tmp)/'review.xlsx';review.make_workbook(d,rows,g,f);w=load_workbook(f);row=next(r for r in w['高風險優先審核'].iter_rows(min_row=2) if r[0].value=='NP-1');self.assertIsNotNone(row[12].hyperlink);invalid=next(r for r in w['高風險優先審核'].iter_rows(min_row=2) if r[0].value=='NP-480');self.assertIsNone(invalid[12].hyperlink);w.close()
+ def test_ods_acceptance_preserves_human_content_and_settings(self):
+  from accept_park_review_ods import relabel_copy, STATUS
+  import zipfile
+  d=self.fixture();rows,g=review.prepare(d)
+  with tempfile.TemporaryDirectory() as tmp:
+   original=Path(tmp)/'original.xlsx';target=Path(tmp)/'accepted.xlsx'
+   w=review.make_workbook(d,rows,g,original);w.close()
+   w=load_workbook(original);w['審核表']['W2']='人工備註不得遺失';w['審核表']['O2']='審核中';w.save(original);w.close()
+   before=review.sha(original);report=relabel_copy(original,target)
+   self.assertTrue(report['allReviewAndHumanInputXmlUnchanged']);self.assertEqual(review.sha(original),before)
+   w=load_workbook(target);self.assertEqual(w['審核表']['W2'].value,'人工備註不得遺失');self.assertEqual(w['審核表']['O2'].value,'審核中');self.assertEqual(w['使用說明']['B3'].value,STATUS);self.assertEqual(w.properties.subject,STATUS);w.close()
+   with zipfile.ZipFile(original) as a,zipfile.ZipFile(target) as b:
+    for n in a.namelist():
+     if n not in report['changedMembers']:self.assertEqual(a.read(n),b.read(n))
+ def acceptance_fixture(self, tmp):
+  d=self.fixture();rows,g=review.prepare(d);source=Path(tmp)/'source.ods';source.write_bytes(b'synthetic mocked ODS');book=Path(tmp)/'review.xlsx';w=review.make_workbook(d,rows,g,book);w.close();return d,source,book
+ def test_ods_acceptance_detects_coordinate_difference(self):
+  from accept_park_review_ods import reconcile
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   d,source,book=self.acceptance_fixture(tmp);w=load_workbook(book);w['審核表']['G2']=24.8;w.save(book);w.close()
+   with patch('accept_park_review_ods.load_source',return_value=d):_,r=reconcile(source,book)
+   self.assertFalse(r['sourcePrimaryOdsVerified']);self.assertTrue(any(x['field']=='候選緯度' for x in r['differences']))
+ def test_ods_acceptance_detects_quality_history_difference(self):
+  from accept_park_review_ods import reconcile
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   d,source,book=self.acceptance_fixture(tmp);w=load_workbook(book);w['既有人工修正紀錄']['D2']='altered';w.save(book);w.close()
+   with patch('accept_park_review_ods.load_source',return_value=d):_,r=reconcile(source,book)
+   self.assertFalse(r['sourcePrimaryOdsVerified']);self.assertTrue(any(x['scope']=='history' for x in r['differences']))
+ def test_ods_acceptance_human_edits_not_source_differences(self):
+  from accept_park_review_ods import reconcile
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   d,source,book=self.acceptance_fixture(tmp);w=load_workbook(book);w['審核表']['W2']='人工記錄';w.save(book);w.close();before=review.sha(book)
+   with patch('accept_park_review_ods.load_source',return_value=d):_,r=reconcile(source,book)
+   self.assertTrue(r['sourcePrimaryOdsVerified']);self.assertEqual(r['differenceCount'],0);self.assertEqual(review.sha(book),before)
+ def test_ods_acceptance_mismatch_emits_csv_without_new_workbook(self):
+  from accept_park_review_ods import accept
+  from unittest.mock import patch
+  with tempfile.TemporaryDirectory() as tmp:
+   d,source,book=self.acceptance_fixture(tmp);w=load_workbook(book);w['審核表']['D2']='不同地址';w.save(book);w.close();out=Path(tmp)/'result'
+   with patch('accept_park_review_ods.load_source',return_value=d):r=accept(source,book,out)
+   self.assertFalse(r['sourcePrimaryOdsVerified']);self.assertTrue((out/'source-differences.csv').exists());self.assertFalse((out/book.name).exists())
 if __name__=='__main__':unittest.main(verbosity=2)
