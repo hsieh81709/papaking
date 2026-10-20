@@ -226,6 +226,8 @@ function doPost(e) {
           }
 
         } else if (isMenuCommand) {
+          // Returning to the menu cancels only this user's conversation intent.
+          if (typeof takeParkIntent_ === 'function') takeParkIntent_(event.source || {});
           replyLine(event.replyToken, buildPapaKingQuickMenu_());
 
         } else if (parkIntent) {
