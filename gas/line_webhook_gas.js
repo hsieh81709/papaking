@@ -146,13 +146,13 @@ var TDX_CITY = {
 function buildPapaKingQuickMenu_() {
   var choices = [
     ['附近公園', '附近公園'],
-    ['溜滑梯', '附近有溜滑梯的公園'],
-    ['鞦韆', '附近有鞦韆的公園'],
-    ['共融遊戲場', '附近共融遊戲場']
+    ['台北溜滑梯', '附近有溜滑梯的公園'],
+    ['台北鞦韆', '附近有鞦韆的公園'],
+    ['台北共融遊戲場', '附近共融遊戲場']
   ];
   return {
     type: 'text',
-    text: '請選擇公園搜尋類型，或直接分享位置查詢停車資訊。',
+    text: '附近公園搜尋雙北已確認位置；遊具篩選僅提供台北，新北設施資料尚未核實。直接分享位置仍查詢停車資訊。',
     quickReply: { items: choices.map(function(pair) {
       return { type: 'action', action: { type: 'message', label: pair[0], text: pair[1] } };
     }).concat([{ type: 'action', action: { type: 'location', label: '停車／分享位置' } }]) }

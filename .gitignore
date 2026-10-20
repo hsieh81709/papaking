@@ -7,3 +7,6 @@
 
 # Python exporter bytecode
 tools/__pycache__/
+
+# Offline Python source tests
+test/**/__pycache__/
