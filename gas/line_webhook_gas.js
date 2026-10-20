@@ -27,7 +27,7 @@ var QUOTA_WHITELIST = (PROPS.getProperty('QUOTA_WHITELIST') || '').split(',').ma
 var SETUP_URL = 'https://github.com/coseto6125/papaking/blob/main/docs/setup.md'
 var QUOTA_USER_TEXT = '本月 ' + MONTHLY_QUOTA + ' 次額度已用完，下個月 1 號重置。\n想不限次數用，自己架一個只要 20 分鐘：\n' + SETUP_URL
 var QUOTA_BUDGET_TEXT = '本月公共額度已用完，下個月 1 號重置。\n想不限次數用，自己架一個只要 20 分鐘：\n' + SETUP_URL
-var QUOTA_STORE_FULL_TEXT = '本月的使用者人數統計已滿，暫時無法再接新的使用者，下個月 1 號重置。\n想不限次數用，自己架一個只要 20 分鐘：\n' + SETUP_URL
+var QUOTA_STORE_FULL_TEXT = '暫時無法記錄使用次數，請稍後再試。\n想不限次數用，自己架一個只要 20 分鐘：\n' + SETUP_URL
 
 // 屬性是人工填的，JSON 打錯不能讓頂層丟例外——那會發生在 doPost 的 try 之前，
 // web app 直接回 500，執行記錄裡看不出跟 LINE 或 TDX 無關
@@ -311,17 +311,17 @@ function quotaUserKey(prefix, id) {
 // 把不是本月的 quota_ 鍵刪掉。用 6 小時的快取旗標壓低掃描頻率；CacheService 可能提前淘汰旗標，多掃一次也只是多讀一次屬性
 function purgeOldQuotaKeys(prefix) {
   var cache = CacheService.getScriptCache();
-  if (cache.get('quota_purged')) return;
+  if (cache.get('quota_purged_' + prefix)) return;
   var all = PROPS.getProperties();
   Object.keys(all).forEach(function (k) {
     if (k.indexOf('quota_') === 0 && k.indexOf(prefix) !== 0) PROPS.deleteProperty(k);
   });
-  cache.put('quota_purged', '1', 21600);
+  cache.put('quota_purged_' + prefix, '1', 21600);
 }
 
 // 扣一次額度。可以查回 null，不行回要回覆給使用者的文字。
 // 白名單：不看個人額度，全域預算可用到 100%；其他人個人額度看 MONTHLY_QUOTA，全域只能用到 PUBLIC_SHARE。
-// 沒有任何 id 的事件（群組裡沒同意隱私的人）只受全域預算限制
+// 沒有 userId 的事件（群組裡沒同意隱私的人）只受全域預算限制
 function consumeQuota(source) {
   if (!MONTHLY_QUOTA && !MONTHLY_BUDGET) return null;
   var prefix = quotaPrefix();
@@ -335,19 +335,19 @@ function consumeQuota(source) {
   var stored = userKey ? PROPS.getProperty(userKey) : null;
   if (userKey && (Number(stored) || 0) >= MONTHLY_QUOTA) return QUOTA_USER_TEXT;
   if (userKey) {
-    // 屬性庫 500KB 塞滿時新使用者的鍵寫不進去：沒法計數就不放行，並說明是人數滿了不是他的額度
+    // 屬性庫 500KB 塞滿等原因使計數無法保存時，不放行未計數的查詢
     try {
       PROPS.setProperty(userKey, String((Number(stored) || 0) + 1));
     } catch (err) {
       Logger.log('額度計數寫入失敗: ' + err);
-      if (stored === null) return QUOTA_STORE_FULL_TEXT;
+      return QUOTA_STORE_FULL_TEXT; // 舊使用者也不能在計數失敗時無限放行
     }
   }
   if (MONTHLY_BUDGET) PROPS.setProperty(totalKey, String(total + 1));
   return null;
 }
 
-// 兩個 TDX NearBy 先查格子快取，未命中的才打；即時剩餘（新北、基隆）每次都抓，併進同一批。
+// 兩個 TDX NearBy 先查位置快取，未命中的才打；即時剩餘（新北、基隆）每次都抓，併進同一批。
 // 回傳最多三則訊息（路邊停車格文字、停車場文字、有結果時再加一則 Flex carousel）：
 // 一個 reply token 最多可送 5 則，文字各自 5,000 字上限，拆開就不會互相擠壓
 function buildReply(lat, lon) {
@@ -362,7 +362,7 @@ function buildReply(lat, lon) {
   var live = liveRequests(city);
   var needToken = (GOOGLE_PLACES_ENABLED || DRIVE_TIME_RPC_ENABLED) && !CacheService.getScriptCache().get('google_kei');
   var responses = tdxFetchAll(nearby.missUrls, live.concat(needToken ? [googleTokenRequest()] : []));
-  lap('TDX 併發 ' + nearby.missUrls.length + ' 筆（格子快取命中 ' + (2 - nearby.missUrls.length) + '），即時 ' + live.length + ' 筆');
+  lap('TDX 併發 ' + nearby.missUrls.length + ' 筆（位置快取命中 ' + (2 - nearby.missUrls.length) + '），即時 ' + live.length + ' 筆');
   var tdxResponses = nearbyStore(nearby, responses.slice(0, nearby.missUrls.length));
   var rest = responses.slice(nearby.missUrls.length);
   loadLive(city, rest.slice(0, live.length));
@@ -664,8 +664,6 @@ function fetchAllSafe(requests) {
   });
 }
 
-// 多個 TDX GET 併發：各挑一把金鑰同時發出；哪一筆撞到金鑰問題就標記用滿，退回 tdxFetch 換把重試。
-// extraRequests 是不需要 TDX 金鑰的其他請求，搭同一批發出，回傳陣列接在 TDX 結果後面（失敗為 null）
 // 使用完整查詢座標作為快取鍵與 NearBy 中心。1km 是 API 上限，不能靠擴大半徑補格心偏移。
 // 同一位置仍可命中靜態快取；不同位置不共用可能漏掉邊界資料的格子。
 function nearbyCached(lat, lon) {
@@ -683,7 +681,7 @@ function nearbyCached(lat, lon) {
   return { keys: keys, hits: hits, missUrls: urls.filter(function (_, i) { return hits[i] === null; }) };
 }
 
-// 把這次真的打 TDX 的回應寫進格子快取：200 且內容是陣列才存、404 存空陣列（範圍內沒有）但存短一點，其他不存。
+// 把這次真的打 TDX 的回應寫進位置快取：200 且內容是陣列才存、404 存空陣列（範圍內沒有）但存短一點，其他不存。
 // 回傳兩個 response 形狀的物件，命中的也包成同樣形狀，parseOnStreet／parseParking 不用分辨來源
 function nearbyStore(nearby, fetched) {
   var cache = CacheService.getScriptCache();
@@ -700,7 +698,7 @@ function nearbyStore(nearby, fetched) {
       if (!Array.isArray(JSON.parse(text))) continue;  // 200 卻不是陣列（HTML、錯誤物件）不要存
       cache.put(nearby.keys[i], text, code === 404 ? NEARBY_EMPTY_CACHE_SECONDS : NEARBY_CACHE_SECONDS);
     } catch (err) {
-      Logger.log('格子快取寫入略過: ' + err);  // 快取寫不進去不能影響回覆
+      Logger.log('位置快取寫入略過: ' + err);  // 快取寫不進去不能影響回覆
     }
   }
   return out;
@@ -710,7 +708,7 @@ function textResponse(code, text) {
   return { getResponseCode: function () { return code; }, getContentText: function () { return text; } };
 }
 
-// 用使用者真實座標過濾半徑內的資料並依直線距離取最近 n 筆（TDX 查詢是以格子中心算的，這裡校正回來）。
+// 用使用者真實座標過濾半徑內的資料並依直線距離取最近 n 筆。
 // 缺少、非有限數字或超出經緯度範圍的資料無法驗證距離，不納入導航結果。
 function validParkingPosition(lat, lon) {
   return typeof lat === 'number' && isFinite(lat) && Math.abs(lat) <= 90 &&
@@ -730,6 +728,7 @@ function nearestWithin(lat, lon, items, posOf, n) {
     .map(function (x) { return x.it; });
 }
 
+// 多個 TDX GET 併發，失效金鑰改用其他金鑰；extraRequests 結果接在 TDX 回應之後。
 function tdxFetchAll(urls, extraRequests) {
   if (!TDX_KEYS.length) throw new Error('TDX_KEYS 未設定或格式錯誤');
   extraRequests = extraRequests || [];
@@ -786,7 +785,7 @@ function resolveTDXCity(lat, lon) {
       }
     }
   } catch (err) {
-    Logger.log('反查縣市錯誤: ' + err);
+    Logger.log('反查縣市失敗');
   }
   return null;
 }
@@ -1456,7 +1455,7 @@ function driveTime(fromLat, fromLon, toLat, toLon) {
     if (!leg) return null;
     return { seconds: leg.duration.value, meters: leg.distance.value };
   } catch (err) {
-    Logger.log('開車時間查詢失敗: ' + err);
+    Logger.log('開車時間查詢失敗');
     return null;
   }
 }
@@ -1892,14 +1891,14 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 
 
 
-// 同一座標查兩次：第二次兩個 NearBy 都該命中格子快取（執行記錄的「格子快取命中 2」），
+// 同一座標查兩次：第二次兩個 NearBy 都該命中格子快取（執行記錄的「位置快取命中 2」），
 // 而新北／基隆的即時剩餘兩次都會重抓
 function testNearbyCache() {
   var lat = 25.0478, lon = 121.5170;  // 台北車站
   buildReply(lat, lon);
   buildReply(lat, lon);
   var hits = nearbyCached(lat, lon).hits.map(function (h) { return h !== null; });
-  Logger.log((hits[0] && hits[1] ? '✓' : '✗') + ' 格子快取命中：路邊 ' + hits[0] + '、停車場 ' + hits[1]);
+  Logger.log((hits[0] && hits[1] ? '✓' : '✗') + ' 位置快取命中：路邊 ' + hits[0] + '、停車場 ' + hits[1]);
 }
 
 function testConfig() {
