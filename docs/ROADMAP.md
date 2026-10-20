@@ -4,6 +4,14 @@
 
 本文件是後續工作提案；**未建立 GitHub Issues、未合併 main、未部署、未寫入 Google Sheets**。現況、測試邊界與403證據見 [PROJECT_STATUS.md](PROJECT_STATUS.md)。以下 PK-xx 為本文件草案編號，不是 GitHub 已存在的 Issue 號；建立時先人工去重，因本次 GitHub REST API 不可用，無法查明所有既有 Issues。
 
+## PK-PARK-MVP／MVP-02 本輪更新
+
+雙北MVP離線程式驗收通過：原157項公園＋新13項、停車72項、來源33項，共275項通過。交界同時搜尋兩市；遊具篩選限台北可用設施資料，新北UNKNOWN不當作無；保留選單意圖與Flex文字備援，新增公園代表位置導航。
+
+附件`新北市公園.csv`為UTF-8 BOM、635筆、無座標或CRS。635筆複合身分／地址均匹配，但官方座標比對0筆、沒有新增發布核准。真實快照可用點為台北812、新北9（1.42%）；台北保守設施門檻目前滑梯3園、鞦韆4園、共融0園，不代表其他園沒有設施。
+
+`https://www.ntparks.tw/views.html`為代理CONNECT403；網站官方身分、條款、列表與個頁未取得。MVP-02官方證據尚未完成，3810格設施保持UNKNOWN，沒有實際網站爬取成功或端對端驗收。Commit、檔案、固定fixtures與資料覆蓋見 [MVP驗收紀錄](verification/PK-PARK-MVP.md)。不部署、不同步、不改9筆正式座標、main或sponsor-worker。
+
 ## PK-13 本輪離線驗收
 
 依 PK-13 新增固定合成 fixtures 與 72 個停車核心測試：TDX 雙路／輪替、1km 格心偏移、NTPC 分頁與即時資料隔離、TWD97、快取 TTL、基隆過期、開車備援、月額度及群組限制。先執行紅燈（58 項中 17 fail；補充輪 72 項中 3 fail），再修正重現缺口，最後 **停車72、公園157、Worker25，共254項全數通過**。既有公園與Worker檔案未修改。

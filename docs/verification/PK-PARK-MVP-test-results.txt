@@ -1,0 +1,126 @@
+PK-PARK-MVP / MVP-02, 2026-10-20
+Base: f948a32887b8def830ae6dd1356b38275360f12c
+All source fixtures synthetic. No Sheets/GAS/LINE writes or website acquisition success.
+
+RED MVP: baseline plus new tests; exit 1
+ok 1 - MVP border query includes both cities sorted by actual distance
+not ok 2 - MVP 溜滑梯 filters only Taipei even if NTPC has unverified feature tags
+not ok 3 - MVP 鞦韆 filters only Taipei even if NTPC has unverified feature tags
+not ok 4 - MVP 共融 filters only Taipei even if NTPC has unverified feature tags
+not ok 5 - MVP NTPC nearby never displays raw facility tags
+not ok 6 - MVP explicitly pending Taipei facilities cannot become positive filter evidence
+ok 7 - MVP approved formal coordinates only; valid unreviewed coordinates remain excluded
+not ok 8 - MVP unsupported county and invalid coordinates never enter result
+not ok 9 - MVP representative-position navigation accompanies original map link
+not ok 10 - MVP NTPC card keeps facilities unknown and no absence assertion
+not ok 11 - MVP menu labels communicate Taipei facility scope while preserving five choices
+not ok 12 - MVP empty result distinguishes incomplete location and Taipei-only facility coverage
+not ok 13 - MVP real LINE location flow, same snapshot Flex 400 fallback and one-shot intent
+# tests 13
+# pass 2
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+
+Historical test commit fdd7f90 replay: same 11 failing cases; exit 1
+ok 1 - MVP border query includes both cities sorted by actual distance
+not ok 2 - MVP 溜滑梯 filters only Taipei even if NTPC has unverified feature tags
+not ok 3 - MVP 鞦韆 filters only Taipei even if NTPC has unverified feature tags
+not ok 4 - MVP 共融 filters only Taipei even if NTPC has unverified feature tags
+not ok 5 - MVP NTPC nearby never displays raw facility tags
+not ok 6 - MVP explicitly pending Taipei facilities cannot become positive filter evidence
+ok 7 - MVP approved formal coordinates only; valid unreviewed coordinates remain excluded
+not ok 8 - MVP unsupported county and invalid coordinates never enter result
+not ok 9 - MVP representative-position navigation accompanies original map link
+not ok 10 - MVP NTPC card keeps facilities unknown and no absence assertion
+not ok 11 - MVP menu labels communicate Taipei facility scope while preserving five choices
+not ok 12 - MVP empty result distinguishes incomplete location and Taipei-only facility coverage
+not ok 13 - MVP real LINE location flow, same snapshot Flex 400 fallback and one-shot intent
+# tests 13
+# pass 2
+# fail 11
+# cancelled 0
+# skipped 0
+# todo 0
+
+GREEN all park tests: exit 0
+# tests 170
+# pass 170
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+GREEN parking tests: exit 0
+# tests 72
+# pass 72
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+
+Source negation regression: 31 tests, one real failing case (non-inclusive / removed) before correction.
+Final source suite: 33 passed, 0 failed, includes CLI and fixed page evidence fixtures.
+
+test_fixture_pages_and_csv_end_to_end (test_sources.CLITests.test_fixture_pages_and_csv_end_to_end) ... ok
+test_missing_snapshot_fails_without_claiming_validation (test_sources.CLITests.test_missing_snapshot_fails_without_claiming_validation) ... ok
+test_bom_and_count (test_sources.CSVTests.test_bom_and_count) ... ok
+test_cp950 (test_sources.CSVTests.test_cp950) ... ok
+test_declared_twd97 (test_sources.CSVTests.test_declared_twd97) ... ok
+test_declared_wgs (test_sources.CSVTests.test_declared_wgs) ... ok
+test_duplicate_header (test_sources.CSVTests.test_duplicate_header) ... ok
+test_invalid_wgs (test_sources.CSVTests.test_invalid_wgs) ... ok
+test_no_coords_not_invented (test_sources.CSVTests.test_no_coords_not_invented) ... ok
+test_partial_coords (test_sources.CSVTests.test_partial_coords) ... ok
+test_projected_ambiguous (test_sources.CSVTests.test_projected_ambiguous) ... ok
+test_quoted_newline (test_sources.CSVTests.test_quoted_newline) ... ok
+test_ragged (test_sources.CSVTests.test_ragged) ... ok
+test_twd97_reference (test_sources.CSVTests.test_twd97_reference) ... ok
+test_unsupported_crs (test_sources.CSVTests.test_unsupported_crs) ... ok
+test_wgs_requires_declaration (test_sources.CSVTests.test_wgs_requires_declaration) ... ok
+test_address_disambiguates_same_name (test_sources.EvidenceTests.test_address_disambiguates_same_name) ... ok
+test_coordinate_conflict_requires_review (test_sources.EvidenceTests.test_coordinate_conflict_requires_review) ... ok
+test_district_mismatch (test_sources.EvidenceTests.test_district_mismatch) ... ok
+test_duplicate_identity_ambiguous (test_sources.EvidenceTests.test_duplicate_identity_ambiguous) ... ok
+test_explicit_noninclusive_and_removed_unknown (test_sources.EvidenceTests.test_explicit_noninclusive_and_removed_unknown) ... ok
+test_http_error_blocks (test_sources.EvidenceTests.test_http_error_blocks) ... ok
+test_identity_composite_only (test_sources.EvidenceTests.test_identity_composite_only) ... ok
+test_lookalike_domain_blocks (test_sources.EvidenceTests.test_lookalike_domain_blocks) ... ok
+test_management_conflict (test_sources.EvidenceTests.test_management_conflict) ... ok
+test_missing_features_unknown (test_sources.EvidenceTests.test_missing_features_unknown) ... ok
+test_missing_terms_blocks (test_sources.EvidenceTests.test_missing_terms_blocks) ... ok
+test_name_alone_insufficient (test_sources.EvidenceTests.test_name_alone_insufficient) ... ok
+test_name_only_blocks (test_sources.EvidenceTests.test_name_only_blocks) ... ok
+test_negative_planned_nearby_unknown (test_sources.EvidenceTests.test_negative_planned_nearby_unknown) ... ok
+test_presence_never_approves_position (test_sources.EvidenceTests.test_presence_never_approves_position) ... ok
+test_six_explicit_features (test_sources.EvidenceTests.test_six_explicit_features) ... ok
+test_unverified_operator_blocks (test_sources.EvidenceTests.test_unverified_operator_blocks) ... ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 0.148s
+
+OK
+
+Checks: node syntax, Python AST, actionlint 1.7.7, git diff --check passed.
+Worker: untouched; not tested in this task. Remote Actions status not verified.
+Actual data: identity635/635; CSV coordinates0; website pages0; new confirmed feature evidence0; formal NTPC9/635.
+
+fdd7f90443d49c3b658386e7bbc7aa6084c2119c test(parks): reproduce dual-city scope, navigation and unknown facility gaps
+
+A	test/parks/mvp.test.mjs
+M	test/parks/search.test.mjs
+e23ac3f7589a650d2635b83b99a71392e361453f feat(parks): add guarded official source audit and dual-city MVP
+
+M	.github/workflows/offline-tests.yml
+M	.gitignore
+M	gas/line_webhook_gas.js
+M	gas/park_search_gas.js
+A	test/park_sources/test_sources.py
+A	tools/park-official-audit.py
+A	tools/park_source_quality.py
+06759bf6ea43152776cf136883215d2ccc2e1ffe test(parks): verify official page matching categories and CLI evidence outputs
+
+A	test/park_sources/fixtures/pages.json
+M	test/park_sources/test_sources.py
+M	tools/park-official-audit.py
