@@ -1,0 +1,552 @@
+{
+  "notice": "User-provided five source exports; deployed version and completeness unverified. Raw sources are not committed.",
+  "date": "2026-10-21 Asia/Taipei",
+  "githubRef": "329a79812b5d4e79d74084c2b2a15f2c4d955bac",
+  "localRef": "d4d6afffd719b01f1791cf2d60c06ccb43a80021",
+  "manifestProvided": false,
+  "deploymentEvidenceProvided": false,
+  "files": [
+    {
+      "upload": "park_b43_regeocode.txt",
+      "mappedFile": "gas/park_b43_regeocode_gas.js",
+      "bytes": 3584,
+      "sha256": "74a162a3311f80aebbfec48312eccf09541e810474e1f9e9e89408a8df77d023",
+      "lines": 64,
+      "functions": [
+        {
+          "name": "runPapaKingParkB43Regeocode",
+          "line": 6
+        }
+      ],
+      "sensitivePatternFindings": []
+    },
+    {
+      "upload": "park_geocoding_gas.txt",
+      "mappedFile": "gas/park_geocoding_gas.js",
+      "bytes": 6784,
+      "sha256": "6b2d59d8c5b66f3736340bd28cb20c5cbe13e5d2e1158355237b4b8deeeb4406",
+      "lines": 239,
+      "functions": [
+        {
+          "name": "runPapaKingParkGeocodingBatch",
+          "line": 13
+        },
+        {
+          "name": "auditPapaKingParkCandidates",
+          "line": 182
+        }
+      ],
+      "sensitivePatternFindings": []
+    },
+    {
+      "upload": "park_search_gas.txt",
+      "mappedFile": "gas/park_search_gas.js",
+      "bytes": 14786,
+      "sha256": "53a4863db8ca3786d73746599e8523f213395dc003e9248da19e70de6d6a5d46",
+      "lines": 351,
+      "functions": [
+        {
+          "name": "parkIntentFromText_",
+          "line": 11
+        },
+        {
+          "name": "parkIntentKey_",
+          "line": 20
+        },
+        {
+          "name": "rememberParkIntent_",
+          "line": 27
+        },
+        {
+          "name": "takeParkIntent_",
+          "line": 33
+        },
+        {
+          "name": "parkDistanceKm_",
+          "line": 41
+        },
+        {
+          "name": "parkRowsAsObjects_",
+          "line": 46
+        },
+        {
+          "name": "parkSearch_",
+          "line": 52
+        },
+        {
+          "name": "buildParkReply_",
+          "line": 77
+        },
+        {
+          "name": "testParkSearch_",
+          "line": 86
+        },
+        {
+          "name": "testPapaKingParkConnection",
+          "line": 91
+        },
+        {
+          "name": "testPapaKingParkMVP",
+          "line": 105
+        },
+        {
+          "name": "testPapaKingRouting",
+          "line": 147
+        },
+        {
+          "name": "buildParkFlexReply_",
+          "line": 165
+        },
+        {
+          "name": "testPapaKingParkFlex_",
+          "line": 200
+        },
+        {
+          "name": "testPapaKingParkFlex",
+          "line": 216
+        },
+        {
+          "name": "auditPapaKingNewTaipeiParks",
+          "line": 220
+        },
+        {
+          "name": "testPapaKingNTPCGeocoding",
+          "line": 257
+        }
+      ],
+      "sensitivePatternFindings": []
+    },
+    {
+      "upload": "程式碼.gs",
+      "mappedFile": "gas/line_webhook_gas.js",
+      "bytes": 82801,
+      "sha256": "3df9f196861acfeb0999ecab71ad9fb09b4c2988aa1dcabfcb5d3d2690993073",
+      "lines": 1741,
+      "functions": [
+        {
+          "name": "parseTDXKeys",
+          "line": 34
+        },
+        {
+          "name": "buildPapaKingQuickMenu_",
+          "line": 150
+        },
+        {
+          "name": "buildPapaKingLocationPrompt_",
+          "line": 167
+        },
+        {
+          "name": "doPost",
+          "line": 178
+        },
+        {
+          "name": "handleLocation",
+          "line": 285
+        },
+        {
+          "name": "quotaPrefix",
+          "line": 297
+        },
+        {
+          "name": "quotaUserKey",
+          "line": 302
+        },
+        {
+          "name": "purgeOldQuotaKeys",
+          "line": 314
+        },
+        {
+          "name": "consumeQuota",
+          "line": 327
+        },
+        {
+          "name": "buildReply",
+          "line": 355
+        },
+        {
+          "name": "section",
+          "line": 411
+        },
+        {
+          "name": "renderSafely",
+          "line": 416
+        },
+        {
+          "name": "flexBubble",
+          "line": 426
+        },
+        {
+          "name": "buildFlexCarousel",
+          "line": 452
+        },
+        {
+          "name": "replyLine",
+          "line": 470
+        },
+        {
+          "name": "postLineReply",
+          "line": 484
+        },
+        {
+          "name": "getTDXToken",
+          "line": 503
+        },
+        {
+          "name": "tdxRateKey",
+          "line": 529
+        },
+        {
+          "name": "markTDXKeyExhausted",
+          "line": 534
+        },
+        {
+          "name": "pickTDXKey",
+          "line": 539
+        },
+        {
+          "name": "tdxFetch",
+          "line": 557
+        },
+        {
+          "name": "tdxEndpointName",
+          "line": 596
+        },
+        {
+          "name": "logTDXRequest",
+          "line": 602
+        },
+        {
+          "name": "logTDXResponse",
+          "line": 606
+        },
+        {
+          "name": "fetchAllSafe",
+          "line": 613
+        },
+        {
+          "name": "nearbyGrid",
+          "line": 632
+        },
+        {
+          "name": "nearbyCached",
+          "line": 638
+        },
+        {
+          "name": "nearbyStore",
+          "line": 658
+        },
+        {
+          "name": "textResponse",
+          "line": 679
+        },
+        {
+          "name": "nearestWithin",
+          "line": 685
+        },
+        {
+          "name": "tdxFetchAll",
+          "line": 698
+        },
+        {
+          "name": "resolveTDXCity",
+          "line": 730
+        },
+        {
+          "name": "cachePutChunked",
+          "line": 759
+        },
+        {
+          "name": "cacheGetChunked",
+          "line": 770
+        },
+        {
+          "name": "getSegmentInfo",
+          "line": 786
+        },
+        {
+          "name": "tdxText",
+          "line": 827
+        },
+        {
+          "name": "segmentTitle",
+          "line": 831
+        },
+        {
+          "name": "getNtpcStaticRoads",
+          "line": 841
+        },
+        {
+          "name": "normalizeRoadName",
+          "line": 856
+        },
+        {
+          "name": "normalizeNtpcStaticRoad",
+          "line": 861
+        },
+        {
+          "name": "findNtpcStaticRoadMatch",
+          "line": 873
+        },
+        {
+          "name": "twd97ToWgs84",
+          "line": 900
+        },
+        {
+          "name": "ntpcPageUrl",
+          "line": 927
+        },
+        {
+          "name": "ntpcFirstPageRequests",
+          "line": 931
+        },
+        {
+          "name": "ntpcFetchAllPages",
+          "line": 935
+        },
+        {
+          "name": "ntpcRowsFromPages",
+          "line": 940
+        },
+        {
+          "name": "getNtpcCarparks",
+          "line": 961
+        },
+        {
+          "name": "getNtpcLive",
+          "line": 990
+        },
+        {
+          "name": "parseNtpcLive",
+          "line": 1002
+        },
+        {
+          "name": "dedupeInto",
+          "line": 1017
+        },
+        {
+          "name": "ntpcCarparksNear",
+          "line": 1026
+        },
+        {
+          "name": "geocodeCached",
+          "line": 1044
+        },
+        {
+          "name": "klcgNormalizeName",
+          "line": 1074
+        },
+        {
+          "name": "getKlcgCarparks",
+          "line": 1080
+        },
+        {
+          "name": "getKlcgLive",
+          "line": 1110
+        },
+        {
+          "name": "parseKlcgLive",
+          "line": 1123
+        },
+        {
+          "name": "klcgKeyMatches",
+          "line": 1142
+        },
+        {
+          "name": "klcgAssignLive",
+          "line": 1153
+        },
+        {
+          "name": "klcgCarparksNear",
+          "line": 1176
+        },
+        {
+          "name": "liveRequests",
+          "line": 1188
+        },
+        {
+          "name": "loadLive",
+          "line": 1197
+        },
+        {
+          "name": "extraCarparksNear",
+          "line": 1210
+        },
+        {
+          "name": "googleTokenFromHtml",
+          "line": 1221
+        },
+        {
+          "name": "googleTokenRequest",
+          "line": 1229
+        },
+        {
+          "name": "getGoogleToken",
+          "line": 1234
+        },
+        {
+          "name": "b64url",
+          "line": 1246
+        },
+        {
+          "name": "googleSearchUrl",
+          "line": 1250
+        },
+        {
+          "name": "cleanGoogleText",
+          "line": 1257
+        },
+        {
+          "name": "googleHoursOf",
+          "line": 1263
+        },
+        {
+          "name": "parseGooglePlaces",
+          "line": 1270
+        },
+        {
+          "name": "googleCarparksNear",
+          "line": 1292
+        },
+        {
+          "name": "carparkNameKey",
+          "line": 1322
+        },
+        {
+          "name": "sameCarpark",
+          "line": 1332
+        },
+        {
+          "name": "googleDirectionsUrl",
+          "line": 1342
+        },
+        {
+          "name": "parseGoogleDrive",
+          "line": 1353
+        },
+        {
+          "name": "driveTimesBatch",
+          "line": 1374
+        },
+        {
+          "name": "driveTime",
+          "line": 1401
+        },
+        {
+          "name": "driveCacheKey",
+          "line": 1420
+        },
+        {
+          "name": "byDriveThenKm",
+          "line": 1424
+        },
+        {
+          "name": "rankSections",
+          "line": 1432
+        },
+        {
+          "name": "travelLine",
+          "line": 1472
+        },
+        {
+          "name": "navUrl",
+          "line": 1481
+        },
+        {
+          "name": "navLink",
+          "line": 1485
+        },
+        {
+          "name": "parseOnStreet",
+          "line": 1490
+        },
+        {
+          "name": "renderOnStreet",
+          "line": 1522
+        },
+        {
+          "name": "parseParking",
+          "line": 1550
+        },
+        {
+          "name": "renderParking",
+          "line": 1584
+        },
+        {
+          "name": "warmCaches",
+          "line": 1609
+        },
+        {
+          "name": "randomTestPoint",
+          "line": 1625
+        },
+        {
+          "name": "runTestPoint",
+          "line": 1635
+        },
+        {
+          "name": "testFlexValidate",
+          "line": 1645
+        },
+        {
+          "name": "describeReply",
+          "line": 1660
+        },
+        {
+          "name": "testGooglePlaces",
+          "line": 1667
+        },
+        {
+          "name": "calculateDistance",
+          "line": 1677
+        },
+        {
+          "name": "testNearbyCache",
+          "line": 1693
+        },
+        {
+          "name": "testConfig",
+          "line": 1701
+        },
+        {
+          "name": "testFull",
+          "line": 1710
+        },
+        {
+          "name": "testPapaKingQuickReply",
+          "line": 1723
+        }
+      ],
+      "sensitivePatternFindings": []
+    },
+    {
+      "upload": "park_b45_sync.txt",
+      "mappedFile": "gas/park_b45_sync_gas.js",
+      "bytes": 5908,
+      "sha256": "15c93e7f86cc5cf0d144fb6019a6966275b48f38fd8f1fc00c9c1532d1173bbe",
+      "lines": 103,
+      "functions": [
+        {
+          "name": "runPapaKingParkB45Preview",
+          "line": 12
+        },
+        {
+          "name": "runPapaKingParkB45Sync",
+          "line": 15
+        },
+        {
+          "name": "papaKingParkB45Run_",
+          "line": 19
+        },
+        {
+          "name": "papaKingParkB45CheckHeaders_",
+          "line": 89
+        },
+        {
+          "name": "papaKingParkB45Index_",
+          "line": 93
+        }
+      ],
+      "sensitivePatternFindings": []
+    }
+  ]
+}
