@@ -52,10 +52,26 @@ function facilitySourceFingerprint_(kind, row) {
     .map(function(b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('');
 }
 
-/** Coarse NTPC bounds only. Publication evidence still needs human verification. */
-function facilityNtpcPosition_(lat, lon) {
+/** Coarse Taipei/New Taipei envelope, not an administrative or entrance check. */
+function facilityTwinCityPosition_(lat, lon) {
   return parkSearchCoordinate_(lat, lon) && Number(lat) >= 24.7 && Number(lat) <= 25.4 &&
     Number(lon) >= 121.2 && Number(lon) <= 122.1;
+}
+
+// Keep the existing park/release/navigation contract and its exact bounds.
+function facilityNtpcPosition_(lat, lon) {
+  return facilityTwinCityPosition_(lat, lon);
+}
+
+/** Taipei adapter is backed by the supplied ODS TP_TOILET source contract.
+ * Normalize only the projected city; fingerprint the untouched source row.
+ * Existing NTPC source eligibility stays compatible.
+ */
+function facilityToiletCity_(row) {
+  var city = facilityText_(row['縣市']).replace(/臺/g, '台');
+  if (city === '新北市') return '新北市';
+  if (city === '台北市' && facilityText_(row['資料來源ID']) === 'TP_TOILET') return '臺北市';
+  return null;
 }
 
 function facilityReleaseDate_(value) {
@@ -140,16 +156,16 @@ function getFacilityData_(kind, details) {
     counts[key] = (counts[key] || 0) + 1;
   });
   var results = rows.map(function(row) {
-    var key = facilityText_(row['公廁ID']);
-    if (!facilityRequiredText_(row['公廁ID']) || counts[key] !== 1 || row['縣市'] !== '新北市' ||
+    var key = facilityText_(row['公廁ID']), city = facilityToiletCity_(row);
+    if (!facilityRequiredText_(row['公廁ID']) || counts[key] !== 1 || !city ||
         ['可用','待驗收'].indexOf(row['資料狀態']) < 0 ||
         ['保留獨立','自動整併'].indexOf(row['整併狀態']) < 0 ||
         !facilityRequiredText_(row['公廁名稱']) || !facilityRequiredText_(row['行政區']) ||
         !facilityRequiredText_(row['地址']) || !facilityRequiredText_(row['資料來源ID']) ||
-        !facilityNtpcPosition_(row['緯度'], row['經度'])) return null;
+        !facilityTwinCityPosition_(row['緯度'], row['經度'])) return null;
     var publication = facilityReleaseFor_('toilet', row, releases);
     if (!publication) return null;
-    return {kind: 'toilet', id: key, name: facilityText_(row['公廁名稱']), city: row['縣市'],
+    return {kind: 'toilet', id: key, name: facilityText_(row['公廁名稱']), city: city,
       district: facilityText_(row['行政區']), address: facilityText_(row['地址']),
       lat: Number(row['緯度']), lon: Number(row['經度']), sourceStatus: row['資料狀態'],
       sourceFingerprint: publication.sourceFingerprint, positionType: publication.positionType,

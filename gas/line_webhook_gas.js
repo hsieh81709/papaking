@@ -145,7 +145,7 @@ var TDX_CITY = {
 /** V0.3.1 LINE Quick Reply：使用者輸入「選單」時顯示。 */
 function buildPapaKingQuickMenu_() {
   var choices = [['停車','停車查詢'],['公園','附近公園'],['公廁','附近公廁']];
-  return {type:'text',text:'請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁目前提供新北已核准資料。',
+  return {type:'text',text:'請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁提供雙北（臺北／新北）已核准資料。',
     quickReply:{items:choices.map(function(pair) {
       return {type:'action',action:{type:'message',label:pair[0],text:pair[1]}};
     })}};

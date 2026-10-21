@@ -1,0 +1,119 @@
+{
+  "utc": "2026-10-21T08:31:59.499216+00:00",
+  "sourceFile": "PapaKing 生活設施資料庫.ods",
+  "sourceSha256": "16d204f96d56e0d916fd7c414675ca77f1394cfb1eb20324f068f83f96ec444c",
+  "sheet": "公廁資料",
+  "headers": [
+    "公廁ID",
+    "縣市",
+    "行政區",
+    "公廁名稱",
+    "地址",
+    "緯度",
+    "經度",
+    "公廁類型",
+    "無障礙設施",
+    "尿布臺",
+    "兒童座椅",
+    "開放時間",
+    "管理單位",
+    "資料來源ID",
+    "原始資料ID",
+    "來源網址",
+    "資料更新日期",
+    "同步時間",
+    "資料狀態",
+    "備註",
+    "設施紀錄數",
+    "整併狀態",
+    "進入限制",
+    "關聯設施ID"
+  ],
+  "rows": 5481,
+  "uniqueIds": 5481,
+  "duplicateIds": 0,
+  "formulaCells": 0,
+  "byCity": {
+    "臺北市": {
+      "rows": 1505,
+      "sourceIds": {
+        "TP_TOILET": 1505
+      },
+      "statuses": {
+        "待驗收": 1451,
+        "待確認": 54
+      },
+      "mergeStates": {
+        "保留獨立": 1431,
+        "自動整併": 20,
+        "待人工確認": 54
+      },
+      "missingDistrict": 148,
+      "missingSourceUrls": 1505,
+      "latLonTypes": {
+        "str/str": 1505
+      }
+    },
+    "新北市": {
+      "rows": 3976,
+      "sourceIds": {
+        "MOENV_NTPC_TOILET": 3976
+      },
+      "statuses": {
+        "待驗收": 3830,
+        "待確認": 146
+      },
+      "mergeStates": {
+        "自動整併": 1562,
+        "保留獨立": 2268,
+        "待人工確認": 146
+      },
+      "missingDistrict": 0,
+      "missingSourceUrls": 3976,
+      "latLonTypes": {
+        "float/float": 2499,
+        "int/float": 1,
+        "str/str": 1476
+      }
+    }
+  },
+  "sourceMetadataHeaders": [
+    "資料來源ID",
+    "資料類型",
+    "縣市",
+    "資料集名稱",
+    "主管機關",
+    "資料集網址",
+    "下載或API網址",
+    "資料格式",
+    "更新週期",
+    "授權條款",
+    "啟用狀態",
+    "備註"
+  ],
+  "sourceMetadata": [
+    {
+      "資料來源ID": "TP_TOILET",
+      "縣市": "臺北市",
+      "資料集名稱": "臺北市公廁點位資訊",
+      "主管機關": "臺北市政府",
+      "資料集網址": "https://data.taipei/dataset/detail?id=ca205b54-a06f-4d84-894c-d6ab5079ce79",
+      "下載或API網址": "",
+      "資料格式": "CSV",
+      "授權條款": ""
+    },
+    {
+      "資料來源ID": "MOENV_NTPC_TOILET",
+      "縣市": "新北市",
+      "資料集名稱": "建檔公廁明細－新北市",
+      "主管機關": "環境部",
+      "資料集網址": "https://data.moenv.gov.tw/dataset/detail/FAC_P_21",
+      "下載或API網址": "",
+      "資料格式": "CSV",
+      "授權條款": ""
+    }
+  ],
+  "releaseSheetPresent": false,
+  "note": "User ODS snapshot only; no live Sheets read; metadata provenance not independently authenticated; no approvals generated.",
+  "sourceScope": "supplied ODS snapshot; not authenticated live Google Sheets or independently fetched official CSV"
+}

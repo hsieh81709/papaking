@@ -116,3 +116,9 @@ CI與完整測試紀錄見 [PK04-07驗證紀錄](../docs/verification/PK04-07.md
 新增`facility_line_gas.js`保存分類Cache與公廁Flex；不新增Script Properties。共用工作簿仍使用既有`PARK_SHEET_ID`，不得填Apps Script ID。沒有發布清單時新北公園／公廁為0，不自動核准或匯入測試資料。
 
 [操作／狀態／回復](../docs/mvp1/P0-2_LINE_INTEGRATION.md)、[436項離線測試紀錄](../docs/mvp1/P0-2_TEST_RESULTS.md)及[合成LINE範例](../docs/mvp1/examples/P0-2_LINE_MESSAGES.json)。重跑：`node --test test/line/*.test.mjs`；正式GAS／LINE及手機導航仍待另行驗收。
+
+## MVP 1.0 P0-7：雙北公廁適配（僅離線完成）
+
+公廁24欄adapter新增臺北ODS的`TP_TOILET`來源契約；原新北相容。兩市共用3km／5筆、距離排序、Flex及walking導航，均必須另有完整人工發布核准，缺表仍0。城市顯示正規化不改來源指紋，UNKNOWN不代表無或24h。上面P0-1／P0-2章節是歷史記錄，其「僅新北公廁」範圍由本節更新。
+
+[P0-7來源／權限／實作報告](../docs/mvp1/P0-7_TAIPEI_TOILETS.md)、[221項受影響測試](../docs/mvp1/P0-7_TEST_RESULTS.md)。原11項安全阻擋未修復，正式版本／發布資料及GAS／LINE驗收仍待完成；沒有部署或資料同步。

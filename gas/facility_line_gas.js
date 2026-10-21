@@ -213,7 +213,7 @@ function facilityEmptyMessage_(kind, lat, lon, details) {
   var name = kind === 'toilet' ? '公廁' : '公園';
   var padLat = PARK_RADIUS_KM / 111, padLon = PARK_RADIUS_KM / (111 * Math.cos(25 * Math.PI / 180));
   if (Number(lat) < 24.7-padLat || Number(lat) > 25.4+padLat || Number(lon) < 121.2-padLon || Number(lon) > 122.1+padLon) {
-    return '該地區的' + name + '資料尚未開放；目前公園提供雙北資料，公廁提供新北已核准資料。';
+    return '該地區的' + name + '資料尚未開放；目前公園與公廁提供雙北（臺北／新北）已核准資料。';
   }
   if (details.publishedCount === 0) return '目前尚無已核准發布的' + name + '資料，暫不提供導航；待驗收不代表附近沒有設施。';
   return '附近沒有符合條件的' + name + '資料（3 公里內）；僅搜尋已核准發布資料。';
