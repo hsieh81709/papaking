@@ -1,0 +1,80 @@
+[
+  {
+    "id": "cloudflare-workers",
+    "url": "https://developers.cloudflare.com/workers/platform/pricing/",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.805552+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://developers.cloudflare.com/workers/platform/pricing/",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  },
+  {
+    "id": "google-cloud-run",
+    "url": "https://cloud.google.com/run/pricing",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.819809+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://cloud.google.com/run/pricing",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  },
+  {
+    "id": "gas-quotas",
+    "url": "https://developers.google.com/apps-script/guides/services/quotas",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.832940+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://developers.google.com/apps-script/guides/services/quotas",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  },
+  {
+    "id": "line-api-pricing",
+    "url": "https://developers.line.biz/en/docs/messaging-api/pricing/",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.845294+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://developers.line.biz/en/docs/messaging-api/pricing/",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  },
+  {
+    "id": "line-tw-account",
+    "url": "https://tw.linebiz.com/service/account-solutions/line-official-account/",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.858061+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://tw.linebiz.com/service/account-solutions/line-official-account/",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  },
+  {
+    "id": "tdx-portal",
+    "url": "https://tdx.transportdata.tw/",
+    "method": "GET; follow <=3 redirects",
+    "utc": "2026-10-21T06:48:41.871921+00:00",
+    "curlExitCode": 56,
+    "proxyConnectStatus": 403,
+    "originHTTPStatus": null,
+    "effectiveUrl": "https://tdx.transportdata.tw/",
+    "classification": "proxy_CONNECT_403",
+    "stderr": "curl: (56) CONNECT tunnel failed, response 403",
+    "priceVerified": false
+  }
+]
