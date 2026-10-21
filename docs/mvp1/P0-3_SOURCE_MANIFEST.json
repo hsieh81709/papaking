@@ -1,0 +1,88 @@
+{
+  "generatedAt": "2026-10-21T05:05:04.212Z",
+  "candidate": "855f5f27ddb205ba828f12e3cec7cae1bea7b4d3",
+  "head": "855f5f27ddb205ba828f12e3cec7cae1bea7b4d3",
+  "branch": "feature/flex-message-v2",
+  "mode": "OFFLINE_SYNTHETIC_ONLY",
+  "officialLineValidation": "NOT_EXERCISED",
+  "liveGasComparison": "NOT_EXERCISED",
+  "files": [
+    {
+      "path": "gas/line_webhook_gas.js",
+      "bytes": 90866,
+      "sha256": "a86225634899069de3c2fd8f730d4c6a01a3531d0b70fbcd29a3ee568cf0a3a8",
+      "matchesCandidate": true
+    },
+    {
+      "path": "gas/park_search_gas.js",
+      "bytes": 14471,
+      "sha256": "8ed78c3153b332033bdaa4a23c30c884dca60c620751e6ffb180e91ab95ff157",
+      "matchesCandidate": true
+    },
+    {
+      "path": "gas/facility_search_gas.js",
+      "bytes": 10597,
+      "sha256": "4f25928f6d49158422251840d3f1f81bac02556571f8d6f960e4e43a42868242",
+      "matchesCandidate": true
+    },
+    {
+      "path": "gas/facility_line_gas.js",
+      "bytes": 12032,
+      "sha256": "ae957da99548a8418bf9407a33be1764e31a191996bfd05518d941dbfaad05d0",
+      "matchesCandidate": true
+    },
+    {
+      "path": "gas/appsscript.json",
+      "bytes": 204,
+      "sha256": "ef7bc5603e696e4a8b983341d90aac207d3f81c5e1d95e839664bdfd415ca170",
+      "matchesCandidate": true
+    }
+  ],
+  "validation": [
+    {
+      "name": "menu",
+      "bytes": 427,
+      "errors": []
+    },
+    {
+      "name": "parkingPrompt",
+      "bytes": 328,
+      "errors": []
+    },
+    {
+      "name": "parking",
+      "bytes": 1143,
+      "errors": []
+    },
+    {
+      "name": "parkPrompt",
+      "bytes": 328,
+      "errors": []
+    },
+    {
+      "name": "park",
+      "bytes": 1128,
+      "errors": []
+    },
+    {
+      "name": "toiletPrompt",
+      "bytes": 328,
+      "errors": []
+    },
+    {
+      "name": "toilet",
+      "bytes": 1162,
+      "errors": []
+    },
+    {
+      "name": "fiveToilets",
+      "bytes": 5346,
+      "errors": []
+    },
+    {
+      "name": "noApprovedToilets",
+      "bytes": 132,
+      "errors": []
+    }
+  ]
+}
