@@ -1,0 +1,12 @@
+{
+  "notice": "Synthetic values in the verified ODS 24-column schema. TP_TOILET provenance ID and string coordinates reflect the supplied export; this is not a real facility or publication approval.",
+  "sourceOdsSha256": "16d204f96d56e0d916fd7c414675ca77f1394cfb1eb20324f068f83f96ec444c",
+  "record": {
+    "公廁ID": "SYNTHETIC-TP-1", "縣市": "臺北市", "行政區": "萬華區",
+    "公廁名稱": "合成臺北公廁", "地址": "合成路1號", "緯度": "25.00010", "經度": "121.46000",
+    "公廁類型": "公共場所", "無障礙設施": "", "尿布臺": "", "兒童座椅": "", "開放時間": "",
+    "管理單位": "合成管理單位", "資料來源ID": "TP_TOILET", "原始資料ID": "synthetic-tp-1",
+    "來源網址": "", "資料更新日期": "", "同步時間": "", "資料狀態": "待驗收", "備註": "",
+    "設施紀錄數": 1, "整併狀態": "保留獨立", "進入限制": "樓層:1F", "關聯設施ID": ""
+  }
+}
