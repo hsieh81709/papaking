@@ -100,3 +100,11 @@ B4-3 現在預設為唯讀預覽；B4-5 正式同步必須傳入本次使用者�
 回執會記錄時間、實際script ID、填入的來源／版本、fixture標籤、觀察數量及各斷言 `passed`／`not_exercised`。明確空結果回 `PASS_EMPTY_RESULT`，不會把卡片／配色標為已驗證。來源／版本仍為外部填入，LINE schema、訊息投遞及Sheets寫入一律不會因此被標記完成。設定 `isolated` 並不是技術沙盒，執行者仍須核對測試專案、帳號與測試資源。
 
 CI與完整測試紀錄見 [PK04-07驗證紀錄](../docs/verification/PK04-07.md)。執行根目錄 `node --test test/parks/*.test.mjs`；Worker在其目錄執行 `npm ci`、`npm test`。GitHub Actions只用合成資料，不部署、不執行remote schema、不需要正式Google／LINE／綠界憑證。
+
+## MVP 1.0 P0-1：共用公園／公廁搜尋核心（尚未部署）
+
+公園搜尋現在依賴新增的`facility_search_gas.js`，兩檔須一起載入。公園／公廁重用3km、最多5筆、直線排序與walking導航；停車1km及行車時間邏輯未變。公廁API為`toiletSearch_(lat,lon)`／`searchNearbyFacilities_('toilet',lat,lon)`，**尚未接入LINE選單或Webhook**。
+
+新北公園與公廁須有唯讀`設施發布核准`清單，綁定來源指紋及座標；缺清單時結果為0，不自動核准原9筆。臺北公園保留原正式基準。公廁待驗收只有在另有完整人工核准時才可搜尋，原狀態不改寫；UNKNOWN不表示沒有設施。程式沒有建表或正式寫入路徑。
+
+本輪沒有新增Script Properties或修改正式設定。核准表11欄、指紋v1、公廁24欄適配、測試及下一階段範圍見[P0-1實作紀錄](../docs/mvp1/P0-1_SHARED_SEARCH.md)。離線命令：`node --test test/facilities/*.test.mjs`，並保留原公園與停車測試。

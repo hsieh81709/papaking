@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness,fixture,plain} from './helpers.mjs';
+import {putRelease,release} from '../facilities/helpers.mjs';
 function setup() {
  const h=harness(), {ps}=fixture(h,['P0']);ps.data.length=1;
  for(let i=8;i>=0;i--)ps.data.push(['P'+i,'臺北市','萬華區','測試公園'+i,'',25+i*.004,121.46,'','','','','','','可用','']);
@@ -24,6 +25,8 @@ test('exact radius boundary admitted; outside radius excluded',()=>{
  ps.data.push(['inside','新北市','板橋區','內','','25',121.46,'','','','','','','可用','']);
  ps.data.push(['edge','新北市','板橋區','邊界','',25+d,121.46,'','','','','','','可用','']);
  ps.data.push(['outside','新北市','板橋區','外','',25+d+0.000001,121.46,'','','','','','','可用','']);
+ // Boundary fixtures have explicit synthetic publication approvals.
+ putRelease(h,ps.data.slice(1).map(r=>release('park',Object.fromEntries(ps.data[0].map((k,i)=>[k,r[i]])))));
  const ids=plain(h.context.parkSearch_(25,121.46,'全部').map(p=>p.id));
  assert.ok(ids.includes('edge'));assert.ok(!ids.includes('outside'));
 });

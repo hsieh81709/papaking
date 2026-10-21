@@ -50,7 +50,8 @@ export function harness(files=['park_geocoding_gas.js','park_b45_sync_gas.js','p
     Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,v)=>Array.from(crypto.createHash('sha256').update(v).digest()),getUuid:()=>crypto.randomUUID(),sleep:()=>{}},
     ContentService:{MimeType:{TEXT:'text'},createTextOutput:value=>({value,setMimeType(){return this;}})}
   });
-  for(const file of files)vm.runInContext(fs.readFileSync(path.join(root,'gas',file),'utf8'),context,{filename:file});
+  const sourceFiles=files.includes('park_search_gas.js')&&!files.includes('facility_search_gas.js')?[...files,'facility_search_gas.js']:files;
+  for(const file of sourceFiles)vm.runInContext(fs.readFileSync(path.join(root,'gas',file),'utf8'),context,{filename:file});
   return {context,events,sheets,logs,props,cache,ss,addSheet(name,data){const s=new Sheet(name,data);sheets.set(name,s);return s;},failWhen(fn){failure=fn;}};
 }
 export function fixture(h, ids=['NP-9','NP-12']) {

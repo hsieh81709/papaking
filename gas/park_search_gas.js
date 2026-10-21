@@ -1,7 +1,8 @@
 /**
  * PapaKing 雙北公園查詢 MVP (GAS)
  * 資料庫使用現有「公園資料」「公園設施」分頁。
- * 指令碼屬性：PARK_SHEET_ID。只有「可用」且座標有效的公園參與搜尋。
+ * 指令碼屬性：PARK_SHEET_ID。依賴 facility_search_gas.js 共用核心。
+ * 臺北保留正式可用基準；新北另需「設施發布核准」的來源指紋與座標核准。
  */
 var PARK_RADIUS_KM = 3;
 var PARK_TOP_N = 5;
@@ -68,6 +69,7 @@ function parkSearch_(lat,lon,intent) {
   var ss=SpreadsheetApp.openById(sheetId);
   var ps=ss.getSheetByName('公園資料'),fs=ss.getSheetByName('公園設施');
   if (!ps||!fs) throw new Error('公園資料或公園設施分頁不存在');
+  var releases=facilityReleaseIndex_(ss);
   var tags=Object.create(null),types=Object.create(null);
   var parks=parkRowsAsObjects_(ps,['公園ID','公園名稱','縣市','行政區','緯度','經度','資料狀態']), counts=Object.create(null);
   parks.forEach(function(p){var id=String(p['公園ID']||'').trim();counts[id]=(counts[id]||0)+1;});
@@ -82,25 +84,24 @@ function parkSearch_(lat,lon,intent) {
     var playground=String(f['遊戲場名稱']||'').replace(/\s/g,'');
     types[id]=Boolean(types[id] || /共融/.test(playground) && !/(?:非|無|未設置|不是|不屬於)共融/.test(playground));
   });
-  return parks.map(function(p){
+  var results=parks.map(function(p){
     var a=Number(p['緯度']),b=Number(p['經度']);
     if (!parkSearchCoordinate_(p['緯度'],p['經度'])||String(p['資料狀態'])!=='可用') return null;
     var id=String(p['公園ID']||'').trim();
     var city=String(p['縣市']||'').replace(/臺/g,'台');
     if (!id || counts[id]!==1 || ['台北市','新北市'].indexOf(city)<0) return null;
+    var publication=facilityParkPublication_(p,releases);
+    if (!publication) return null;
     // Feature filtering is Taipei-only. NTPC UNKNOWN data is never interpreted as absence.
     if (intent!=='全部' && city!=='台北市') return null;
     if (intent==='共融' && !types[id]) return null;
     if ((intent==='鞦韆'||intent==='溜滑梯') && (tags[id]||[]).indexOf(intent)<0) return null;
-    var dist=parkDistanceKm_(lat,lon,a,b);
-    // One micrometre tolerance absorbs floating point error at the exact boundary.
-    if (dist>PARK_RADIUS_KM+1e-9) return null;
-    dist=Math.min(dist,PARK_RADIUS_KM);
-    return {name:String(p['公園名稱']||''),city:String(p['縣市']||''),district:String(p['行政區']||''),lat:a,lon:b,km:dist,tags:city==='台北市'?(tags[id]||[]):[],id:id};
-  }).filter(Boolean).sort(function(a,b){return a.km-b.km || a.id.localeCompare(b.id);}).slice(0,PARK_TOP_N);
+    return {kind:'park',name:String(p['公園名稱']||''),city:String(p['縣市']||''),district:String(p['行政區']||''),address:String(p['地址']||''),lat:a,lon:b,tags:city==='台北市'?(tags[id]||[]):[],id:id,sourceStatus:p['資料狀態'],sourceFingerprint:publication.sourceFingerprint,positionType:publication.positionType,publication:publication};
+  }).filter(Boolean);
+  return facilityRankNearby_(lat,lon,results);
 }
 function parkNavigationUrl_(park) {
-  return 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(park.lat+','+park.lon)+'&travelmode=walking';
+  return facilityWalkingUrl_(park.lat,park.lon);
 }
 function buildParkReply_(lat,lon,intent) {
   if (!parkSearchCoordinate_(lat,lon)) return '位置座標異常，請重新分享台灣的位置。';

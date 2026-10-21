@@ -1,11 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {harness,plain} from './helpers.mjs';
+import {putRelease,release} from '../facilities/helpers.mjs';
 const headers=['公園ID','縣市','行政區','公園名稱','地址','緯度','經度','管理單位','資料來源ID','原始資料ID','來源網址','資料更新日期','同步時間','資料狀態','備註'];
 function setup(){
  const h=harness(['park_search_gas.js','line_webhook_gas.js']);
  const parks=h.addSheet('公園資料',[headers,['TP-1','臺北市','萬華區','台北合成園','甲路',25.04,121.5,'','TP_PARK','','','','','可用',''],['NP-1','新北市','三重區','新北合成園','乙路',25.041,121.5,'','NTPC_PARK','','','','','可用','']]);
  const facilities=h.addSheet('公園設施',[['公園ID','可查詢遊具類別（依休憩設施）','遊戲場名稱','資料狀態'],['TP-1','溜滑梯、鞦韆','共融遊戲場','可用'],['NP-1','溜滑梯、鞦韆','共融遊戲場','可用']]);
+ // Explicit synthetic approval for the NTPC fixture; never inferred from 可用.
+ putRelease(h,[release('park',Object.fromEntries(headers.map((k,i)=>[k,parks.data[2][i]])))]);
  return {...h,parks,facilities};
 }
 test('MVP border query includes both cities sorted by actual distance',()=>{const h=setup(),r=h.context.parkSearch_(25.0408,121.5,'全部');assert.deepEqual(plain(r.map(x=>x.id)),['NP-1','TP-1']);assert.ok(r[0].km<r[1].km);});
