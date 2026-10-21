@@ -1,5 +1,7 @@
 # P0-5 安全架構與成本決策
 
+> 最新優先級見[P0-6精簡上線計畫](P0-6_LEAN_RELEASE_PLAN.md)。Worker＋DO／多服務架構暫停，不再作首發前置；只有最小方案的安全／容量驗收失敗且提出必要性證據時才重評。本輪歷史成本模型不代表已核准預算。
+
 2026-10-21 UTC；分支 `feature/flex-message-v2`；基準 `e5bf54d13e29db59061a1f3018c34d47bdf9ae98`，serving程式仍為855f5f2。依P0-4五份規劃；本輪不建立資源、不改執行程式、不部署或同步。
 
 **推薦先評估方案A：獨立Cloudflare Worker＋SQLite-backed Durable Object＋受保護GAS。** 方案B以獨立Cloud Run控制入口／dispatcher＋Firestore交易提供相同安全契約，是Google平台替代方案。推薦理由是MVP元件及排程維護較少，不是已證實價格最低；官方價格文件全部被代理阻擋，**本輪沒有可核准的精確月費或免費額度結論**。

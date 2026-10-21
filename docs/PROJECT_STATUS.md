@@ -1,5 +1,7 @@
 # PapaKing 專案現況
 
+> 最新MVP範圍與已核對Git差異見[P0-6精簡上線計畫](mvp1/P0-6_LEAN_RELEASE_PLAN.md)。正式GAS版本仍待唯讀對照；本輪只調整計畫，未新增部署或資料核准，原安全阻擋未解除。下文為各階段歷史證據，不能把舊快照筆數當正式即時可發布數。
+
 盤點日期：2026-10-20（Asia/Taipei）。儲存庫：`hsieh81709/papaking`。
 本文件以唯讀 Git 分支、原始碼、設定、既有紀錄及本次測試為依據；正式 GAS、Google Sheets、LINE Webhook 與 `main` 均未變更。建議 Issues 與整合關卡見 [ROADMAP.md](ROADMAP.md)。
 

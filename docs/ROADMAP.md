@@ -1,5 +1,7 @@
 # PapaKing 路線圖、Issues 草案與分支整合順序
 
+> MVP 1.0最新工作順序：[P0-6精簡上線計畫](mvp1/P0-6_LEAN_RELEASE_PLAN.md)。優先P0-1／P0-2重用、雙北公廁小改與核准資料子集；大型DO架構暫停。下文版本／測試數為歷史盤點，不代表正式部署狀態。
+
 更新：2026-10-20（Asia/Taipei）。功能基準：`main@734ace5`、`feature/v0.3.1-park-flex@b3bb7c1`、`feature/flex-message-v2@0b4a3f0`。
 
 本文件是後續工作提案；**未建立 GitHub Issues、未合併 main、未部署、未寫入 Google Sheets**。現況、測試邊界與403證據見 [PROJECT_STATUS.md](PROJECT_STATUS.md)。以下 PK-xx 為本文件草案編號，不是 GitHub 已存在的 Issue 號；建立時先人工去重，因本次 GitHub REST API 不可用，無法查明所有既有 Issues。
