@@ -51,7 +51,7 @@ test('no results uses text fallback; populated result builds up to five Flex car
  const {h,ps}=setup(),flex=h.context.buildParkFlexReply_(25,121.46,'全部');
  assert.equal(flex.type,'flex');assert.equal(flex.contents.contents.length,5);
  assert.match(flex.contents.contents[0].footer.contents[0].action.uri,/query=25%2C121.46/);
- ps.data.length=1;const text=h.context.buildParkFlexReply_(25,121.46,'全部');assert.equal(typeof text,'string');assert.match(text,/沒有符合條件/);
+ ps.data.length=1;const text=h.context.buildParkFlexReply_(25,121.46,'全部');assert.equal(typeof text,'string');assert.match(text,/尚無已核准發布/);
 });
 test('intent is one-shot and scoped to conversation plus user, missing group user rejected',()=>{
  const {h:{context:c}}=setup(),a={type:'user',userId:'fixture-user'},b={type:'group',groupId:'fixture-group',userId:'fixture-user'};
@@ -59,7 +59,7 @@ test('intent is one-shot and scoped to conversation plus user, missing group use
  assert.equal(c.rememberParkIntent_({type:'group',groupId:'fixture-group'},'全部'),false);
  c.testPapaKingRouting();
 });
-test('real Webhook dispatch routes park then restores parking; no LINE API calls',()=>{
+test('real Webhook dispatch requires classification, routes park and explicit parking; no LINE API calls',()=>{
  const h=harness(['park_geocoding_gas.js','park_b45_sync_gas.js','park_search_gas.js','line_webhook_gas.js']);
  const c=h.context,replies=[],parking=[];
  c.replyLine=(token,msg)=>replies.push({token,msg});c.buildParkFlexReply_=(lat,lon,intent)=>({type:'flex',lat,lon,intent});
@@ -68,9 +68,10 @@ test('real Webhook dispatch routes park then restores parking; no LINE API calls
  const text=s=>({type:'message',source,replyToken:'fixture-token',message:{type:'text',text:s}});
  const loc={type:'message',source,replyToken:'fixture-token',message:{type:'location',latitude:25,longitude:121.46}};
  const run=events=>c.doPost({postData:{contents:JSON.stringify({events})}});
- assert.equal(run([loc]).value,'OK');assert.equal(parking.length,1);
- run([text('附近有溜滑梯的公園'),loc,loc]);assert.equal(replies[1].msg.intent,'溜滑梯');assert.equal(parking.length,2);
- run([text('選單')]);assert.equal(replies.at(-1).msg.quickReply.items.length,5);
+ assert.equal(run([loc]).value,'OK');assert.equal(parking.length,0);assert.match(replies.at(-1).msg,/選擇.*分類/);
+ run([text('附近有溜滑梯的公園'),loc,loc]);assert.ok(replies.some(r=>r.msg.intent==='溜滑梯'));assert.equal(parking.length,0);assert.match(replies.at(-1).msg,/選擇.*分類/);
+ run([text('停車查詢'),loc]);assert.equal(parking.length,1);
+ run([text('選單')]);assert.equal(replies.at(-1).msg.quickReply.items.length,3);
  assert.equal(run([{type:'follow'}]).value,'OK');assert.equal(c.doPost({}).value,'Invalid request');
 });
 test('existing parking Flex smoke tests and NTPC Static Fallback regression pass unchanged',()=>{

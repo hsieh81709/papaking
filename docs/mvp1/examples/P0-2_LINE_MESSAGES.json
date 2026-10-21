@@ -1,0 +1,320 @@
+{
+  "notice": "僅合成範例，非正式LINE投遞／TDX查詢／資料發布核准。停車範例只執行既有renderer；公園及公廁經合成Sheets與發布gate。",
+  "menu": {
+    "type": "text",
+    "text": "請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁目前提供新北已核准資料。",
+    "quickReply": {
+      "items": [
+        {
+          "type": "action",
+          "action": {
+            "type": "message",
+            "label": "停車",
+            "text": "停車查詢"
+          }
+        },
+        {
+          "type": "action",
+          "action": {
+            "type": "message",
+            "label": "公園",
+            "text": "附近公園"
+          }
+        },
+        {
+          "type": "action",
+          "action": {
+            "type": "message",
+            "label": "公廁",
+            "text": "附近公廁"
+          }
+        }
+      ]
+    }
+  },
+  "locationPrompt": {
+    "type": "text",
+    "text": "請分享位置，搜尋附近公廁（3 公里內）。分類有效10分鐘，完成一次查詢後請重新選擇。",
+    "quickReply": {
+      "items": [
+        {
+          "type": "action",
+          "action": {
+            "type": "location",
+            "label": "分享位置"
+          }
+        },
+        {
+          "type": "action",
+          "action": {
+            "type": "message",
+            "label": "返回主選單",
+            "text": "選單"
+          }
+        }
+      ]
+    }
+  },
+  "toilet": {
+    "type": "flex",
+    "altText": "附近公廁：找到 1 筆，請滑動查看。",
+    "contents": {
+      "type": "carousel",
+      "contents": [
+        {
+          "type": "bubble",
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+              {
+                "type": "text",
+                "text": "合成公廁",
+                "weight": "bold",
+                "size": "lg",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "板橋區 合成路1號",
+                "size": "sm",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "距離約 0 公尺（直線）",
+                "weight": "bold",
+                "color": "#00838F",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "開放時間：未確認",
+                "size": "sm",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "無障礙設施：未確認",
+                "size": "sm",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "尿布臺：未確認",
+                "size": "sm",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "進入限制：樓層:2F",
+                "size": "sm",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "導航至審核記錄的位置；入口、樓層與開放狀況依現場標示。",
+                "size": "xs",
+                "color": "#666666",
+                "wrap": true
+              }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "button",
+                "style": "primary",
+                "color": "#00838F",
+                "action": {
+                  "type": "uri",
+                  "label": "Google Maps 導航",
+                  "uri": "https://www.google.com/maps/dir/?api=1&destination=25%2C121.46&travelmode=walking"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "park": {
+    "type": "flex",
+    "altText": "附近公園搜尋：找到 1 筆，請滑動查看。",
+    "contents": {
+      "type": "carousel",
+      "contents": [
+        {
+          "type": "bubble",
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "md",
+            "contents": [
+              {
+                "type": "text",
+                "text": "合成臺北公園",
+                "weight": "bold",
+                "size": "lg",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "臺北市 萬華區",
+                "size": "sm",
+                "color": "#666666",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "距離約 0 公尺（直線）",
+                "size": "md",
+                "weight": "bold",
+                "color": "#227A4C"
+              },
+              {
+                "type": "text",
+                "text": "設施資料未確認",
+                "size": "sm",
+                "color": "#555555",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "導航至公園代表位置；入口與設施未經現場查核",
+                "size": "xs",
+                "color": "#888888",
+                "wrap": true
+              }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "contents": [
+              {
+                "type": "button",
+                "style": "primary",
+                "color": "#227A4C",
+                "action": {
+                  "type": "uri",
+                  "label": "開啟 Google 地圖",
+                  "uri": "https://www.google.com/maps/search/?api=1&query=25%2C121.46"
+                }
+              },
+              {
+                "type": "button",
+                "style": "link",
+                "action": {
+                  "type": "uri",
+                  "label": "導航至公園代表位置",
+                  "uri": "https://www.google.com/maps/dir/?api=1&destination=25%2C121.46&travelmode=walking"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "parking": {
+    "type": "flex",
+    "altText": "最近的 1 個停車選擇",
+    "contents": {
+      "type": "carousel",
+      "contents": [
+        {
+          "type": "bubble",
+          "size": "kilo",
+          "header": {
+            "type": "box",
+            "layout": "vertical",
+            "backgroundColor": "#1976D2",
+            "paddingAll": "10px",
+            "contents": [
+              {
+                "type": "text",
+                "text": "停車場",
+                "color": "#FFFFFF",
+                "size": "sm",
+                "weight": "bold"
+              }
+            ]
+          },
+          "body": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "sm",
+            "paddingAll": "12px",
+            "backgroundColor": "#FFFFFF",
+            "contents": [
+              {
+                "type": "text",
+                "text": "合成停車場",
+                "weight": "bold",
+                "size": "md",
+                "color": "#183153",
+                "wrap": true
+              },
+              {
+                "type": "separator",
+                "color": "#E3F2FD",
+                "margin": "sm"
+              },
+              {
+                "type": "text",
+                "text": "距離約500公尺（直線）",
+                "size": "xs",
+                "color": "#455A64",
+                "wrap": true
+              },
+              {
+                "type": "text",
+                "text": "即時剩餘資料未確認",
+                "size": "xs",
+                "color": "#455A64",
+                "wrap": true
+              }
+            ]
+          },
+          "footer": {
+            "type": "box",
+            "layout": "vertical",
+            "spacing": "xs",
+            "paddingAll": "10px",
+            "contents": [
+              {
+                "type": "button",
+                "style": "secondary",
+                "height": "sm",
+                "action": {
+                  "type": "uri",
+                  "label": "查看地圖",
+                  "uri": "https://www.google.com/maps/search/?api=1&query=25%2C121.46"
+                }
+              },
+              {
+                "type": "button",
+                "style": "primary",
+                "height": "sm",
+                "color": "#1976D2",
+                "action": {
+                  "type": "uri",
+                  "label": "開始導航",
+                  "uri": "https://www.google.com/maps/dir/?api=1&destination=25,121.46&travelmode=driving"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "noApprovedToilets": {
+    "type": "text",
+    "text": "目前尚無已核准發布的公廁資料，暫不提供導航；待驗收不代表附近沒有設施。"
+  }
+}

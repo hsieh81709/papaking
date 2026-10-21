@@ -6,7 +6,7 @@
 
 1. 前往 [Google Apps Script](https://script.google.com)
 2. 建立新專案
-3. 將 `line_webhook_gas.js` 的內容貼上
+3. 使用目前MVP三分類原始碼時，需將 `line_webhook_gas.js`、`park_search_gas.js`、`facility_search_gas.js`、`facility_line_gas.js` 放在同一GAS專案；不能只貼Webhook單檔。本輪僅離線開發，正式部署仍須另行核准。
 4. 在「專案設定 > 指令碼屬性」新增以下屬性（**不要寫進程式碼**，會隨原始碼外流）：
 
    | 屬性名稱 | 值 |
@@ -108,3 +108,11 @@ CI與完整測試紀錄見 [PK04-07驗證紀錄](../docs/verification/PK04-07.md
 新北公園與公廁須有唯讀`設施發布核准`清單，綁定來源指紋及座標；缺清單時結果為0，不自動核准原9筆。臺北公園保留原正式基準。公廁待驗收只有在另有完整人工核准時才可搜尋，原狀態不改寫；UNKNOWN不表示沒有設施。程式沒有建表或正式寫入路徑。
 
 本輪沒有新增Script Properties或修改正式設定。核准表11欄、指紋v1、公廁24欄適配、測試及下一階段範圍見[P0-1實作紀錄](../docs/mvp1/P0-1_SHARED_SEARCH.md)。離線命令：`node --test test/facilities/*.test.mjs`，並保留原公園與停車測試。
+
+## MVP 1.0 P0-2：三分類LINE路由（尚未正式部署）
+
+主選單為「停車／公園／公廁」三類，先選分類再分享位置。分類有效10分鐘，一次完成後需重選；未分類、過期或未知分類均不默認停車。停車核心與TDX／行車時間未改，公廁只從P0-1已核准結果建立walking導航。所有UNKNOWN顯示未確認。
+
+新增`facility_line_gas.js`保存分類Cache與公廁Flex；不新增Script Properties。共用工作簿仍使用既有`PARK_SHEET_ID`，不得填Apps Script ID。沒有發布清單時新北公園／公廁為0，不自動核准或匯入測試資料。
+
+[操作／狀態／回復](../docs/mvp1/P0-2_LINE_INTEGRATION.md)、[436項離線測試紀錄](../docs/mvp1/P0-2_TEST_RESULTS.md)及[合成LINE範例](../docs/mvp1/examples/P0-2_LINE_MESSAGES.json)。重跑：`node --test test/line/*.test.mjs`；正式GAS／LINE及手機導航仍待另行驗收。

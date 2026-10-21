@@ -21,32 +21,32 @@ function router(files=['park_search_gas.js','line_webhook_gas.js']) {
 }
 const direct={type:'user',userId:'SYNTHETIC_USER'};
 for(const source of [direct,{type:'group',groupId:'SYNTHETIC_GROUP',userId:direct.userId},{type:'room',roomId:'SYNTHETIC_ROOM',userId:direct.userId}]) {
- test(`PK-04 ${source.type}: menu cancels park intent before parking location action`,()=>{
+ test(`PK-04 ${source.type}: menu cancels park intent and unclassified location prompts again`,()=>{
   const h=router();h.text(source,'附近公園');h.text(source,'選單');h.location(source);
-  assert.deepEqual(h.routes,['parking']);assert.equal(h.replies[1].quickReply.items.at(-1).action.type,'location');
+  assert.deepEqual(h.routes,[]);assert.equal(h.replies[1].quickReply.items.length,3);assert.match(h.replies.at(-1),/選擇.*分類/);h.text(source,'停車查詢');h.location(source);assert.deepEqual(h.routes,['parking']);
  });
 }
 test('PK-04 menu reset is isolated from the same user in another conversation and another group member',()=>{
  const h=router(),group={type:'group',groupId:'SYNTHETIC_GROUP',userId:direct.userId},member={...group,userId:'SYNTHETIC_OTHER'};
  h.text(direct,'附近公園');h.text(group,'附近有溜滑梯的公園');h.text(member,'附近有鞦韆的公園');
  h.text(direct,'menu');h.location(direct);h.location(group);h.location(member);
- assert.deepEqual(h.routes,['parking','溜滑梯','鞦韆']);
+ assert.deepEqual(h.routes,['溜滑梯','鞦韆']);
 });
 test('PK-04 reselecting from each menu alias sets a new one-shot park intent',()=>{
  for(const menu of ['選單','功能選單','公園選單','MENU']) {
   const h=router();h.text(direct,'附近公園');h.text(direct,menu);h.text(direct,'附近有鞦韆的公園');h.location(direct);h.location(direct);
-  assert.deepEqual(h.routes,['鞦韆','parking']);
+  assert.deepEqual(h.routes,['鞦韆']);assert.match(h.replies.at(-1),/選擇.*分類/);
  }
 });
 test('PK-04 park intent works before TTL and is consumed once',()=>{
  const h=router();h.text(direct,'附近有溜滑梯的公園');h.advance(599);h.location(direct);h.location(direct);
- assert.deepEqual(h.routes,['溜滑梯','parking']);
+ assert.deepEqual(h.routes,['溜滑梯']);assert.match(h.replies.at(-1),/選擇.*分類/);
 });
-test('PK-04 expired intent and direct locations retain default parking',()=>{
+test('PK-04 expired intent and direct locations never infer parking',()=>{
  const h=router();h.location(direct);h.text(direct,'附近公園');h.advance(600);h.location(direct);
- assert.deepEqual(h.routes,['parking','parking']);
+ assert.deepEqual(h.routes,[]);assert.match(h.replies.at(-1),/逾時|過期/);h.text(direct,'停車查詢');h.location(direct);assert.deepEqual(h.routes,['parking']);
 });
 test('PK-04 menu remains usable when only the parking module is installed',()=>{
  const h=router(['line_webhook_gas.js']);h.text(direct,'選單');h.location(direct);
- assert.equal(h.replies.length,1);assert.deepEqual(h.routes,['parking']);assert.ok(!h.logs.some(s=>String(s).includes('處理失敗')));
+ assert.equal(h.replies.length,2);assert.deepEqual(h.routes,[]);assert.match(h.replies.at(-1),/選擇.*分類/);h.text(direct,'停車查詢');h.location(direct);assert.deepEqual(h.routes,['parking']);assert.ok(!h.logs.some(s=>String(s).includes('處理失敗')));
 });

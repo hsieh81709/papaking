@@ -144,31 +144,19 @@ var TDX_CITY = {
 
 /** V0.3.1 LINE Quick Reply：使用者輸入「選單」時顯示。 */
 function buildPapaKingQuickMenu_() {
-  var choices = [
-    ['附近公園', '附近公園'],
-    ['台北溜滑梯', '附近有溜滑梯的公園'],
-    ['台北鞦韆', '附近有鞦韆的公園'],
-    ['台北共融遊戲場', '附近共融遊戲場']
-  ];
-  return {
-    type: 'text',
-    text: '附近公園搜尋雙北已確認位置；遊具篩選僅提供台北，新北設施資料尚未核實。直接分享位置仍查詢停車資訊。',
-    quickReply: { items: choices.map(function(pair) {
-      return { type: 'action', action: { type: 'message', label: pair[0], text: pair[1] } };
-    }).concat([{ type: 'action', action: { type: 'location', label: '停車／分享位置' } }]) }
-  };
+  var choices = [['停車','停車查詢'],['公園','附近公園'],['公廁','附近公廁']];
+  return {type:'text',text:'請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁目前提供新北已核准資料。',
+    quickReply:{items:choices.map(function(pair) {
+      return {type:'action',action:{type:'message',label:pair[0],text:pair[1]}};
+    })}};
 }
 
-/** 公園條件已保存時，提供直接分享位置的快捷鍵。 */
-function buildPapaKingLocationPrompt_() {
-  return {
-    type: 'text',
-    text: '🌳 請點選下方「分享位置」，搜尋附近符合條件的公園（3 公里內）。',
-    quickReply: { items: [
-      { type: 'action', action: { type: 'location', label: '分享位置' } },
-      { type: 'action', action: { type: 'message', label: '重新選擇', text: '選單' } }
-    ] }
-  };
+function buildPapaKingLocationPrompt_(kind) {
+  kind = kind || 'park';
+  var name = kind === 'parking' ? '停車' : kind === 'toilet' ? '公廁' : '公園';
+  return {type:'text',text:'請分享位置，搜尋附近' + name + '（' + (kind === 'parking' ? '1' : '3') + ' 公里內）。分類有效10分鐘，完成一次查詢後請重新選擇。',
+    quickReply:{items:[{type:'action',action:{type:'location',label:'分享位置'}},
+      {type:'action',action:{type:'message',label:'返回主選單',text:'選單'}}]}};
 }
 
 function doPost(e) {
@@ -194,20 +182,7 @@ function doPost(e) {
         event.message.type === 'text' &&
         /^id$/i.test((event.message.text || '').trim());
 
-      var parkIntent =
-        event.message.type === 'text' &&
-        typeof parkIntentFromText_ === 'function'
-          ? parkIntentFromText_(event.message.text)
-          : null;
-
-      var isMenuCommand =
-        event.message.type === 'text' &&
-        /^(選單|功能選單|公園選單|menu)$/i.test((event.message.text || '').trim());
-
-      if (!isIdCommand && !parkIntent && !isMenuCommand &&
-          event.message.type !== 'location') {
-        continue;
-      }
+      if (event.message.type !== 'text' && event.message.type !== 'location') continue;
 
       try {
         if (isIdCommand) {
@@ -221,45 +196,10 @@ function doPost(e) {
             );
           }
 
-        } else if (isMenuCommand) {
-          // Returning to the menu cancels only this user's conversation intent.
-          if (typeof takeParkIntent_ === 'function') takeParkIntent_(event.source || {});
-          replyLine(event.replyToken, buildPapaKingQuickMenu_());
-
-        } else if (parkIntent) {
-
-          if (rememberParkIntent_(event.source || {}, parkIntent)) {
-            replyLine(
-              event.replyToken,
-              buildPapaKingLocationPrompt_()
-            );
-          } else {
-            replyLine(
-              event.replyToken,
-              '請在一對一聊天室使用公園搜尋，才能安全保存本次查詢條件。'
-            );
-          }
-
+        } else if (typeof handlePapaKingMessage_ === 'function') {
+          handlePapaKingMessage_(event);
         } else {
-
-          var requestedPark =
-            typeof takeParkIntent_ === 'function'
-              ? takeParkIntent_(event.source || {})
-              : null;
-
-          if (requestedPark) {
-            var parkFallback = {};
-            var parkMessage = buildParkFlexReply_(
-              event.message.latitude,
-              event.message.longitude,
-              requestedPark,
-              parkFallback
-            );
-            replyLine(event.replyToken, parkMessage, parkFallback.text);
-          } else {
-            handleLocation(event);
-          }
-
+          replyLine(event.replyToken, '系統暫時無法查詢，請稍後再試。');
         }
 
       } catch (err) {
@@ -498,7 +438,7 @@ function replyLine(token, items, fallbackText) {
   var messages = [].concat(items).slice(0, LINE_REPLY_MAX_MESSAGES).map(function (item) {
     return typeof item === 'string' ? lineTextMessage_(item) : item;
   });
-  var code = postLineReply(token, messages);
+  var code = papaKingPostReply_(token, messages);
   var textOnly = messages.filter(function (m) { return m.type === 'text'; });
   // A 400 means the rich reply was rejected. Do not retry success, transport
   // failures or other statuses whose delivery state may be uncertain.
@@ -508,9 +448,14 @@ function replyLine(token, items, fallbackText) {
     }
     if (textOnly.length) {
       Logger.log('LINE 拒收含 Flex 的回覆，改只送文字');
-      postLineReply(token, textOnly); // One bounded fallback attempt, never recursion.
+      papaKingPostReply_(token, textOnly); // One bounded fallback attempt, never recursion.
     }
   }
+}
+
+function papaKingPostReply_(token, messages) {
+  try { return postLineReply(token, messages); }
+  catch (error) { error.papaKingReplyAttempted = true; throw error; }
 }
 
 function postLineReply(token, messages) {

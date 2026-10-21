@@ -8,6 +8,27 @@ var FACILITY_TOILET_HEADERS_ = ['公廁ID','縣市','行政區','公廁名稱','
 var FACILITY_PARK_HEADERS_ = ['公園ID','縣市','行政區','公園名稱','地址','緯度','經度','管理單位','資料來源ID','原始資料ID','來源網址','資料更新日期','同步時間','資料狀態','備註'];
 var FACILITY_RELEASE_HEADERS_ = ['設施類別','設施ID','來源資料指紋','緯度','經度','資料驗收','發布決定','核准人','核准日期','證據URL','座標代表類型'];
 
+function facilityDataError_(message) {
+  var error = new Error(message);
+  error.facilityDataError = true;
+  return error;
+}
+
+function facilityOpenWorkbook_() {
+  var id = PropertiesService.getScriptProperties().getProperty('PARK_SHEET_ID');
+  if (!id) throw facilityDataError_('請先設定 PARK_SHEET_ID 指令碼屬性');
+  try { return SpreadsheetApp.openById(id); }
+  catch (error) { throw facilityDataError_('試算表讀取失敗'); }
+}
+
+function facilitySheet_(workbook, name, optional) {
+  var sheet;
+  try { sheet = workbook.getSheetByName(name); }
+  catch (error) { throw facilityDataError_(name + '分頁讀取失敗'); }
+  if (!sheet && !optional) throw facilityDataError_(name + '分頁不存在');
+  return sheet;
+}
+
 function facilityRequiredText_(value) {
   return typeof value === 'string' && value.trim() !== '' && !/[\r\n\x00]/.test(value);
 }
@@ -51,7 +72,7 @@ function facilityEvidenceUrl_(value) {
 }
 
 function facilityReleaseIndex_(workbook) {
-  var sheet = workbook.getSheetByName('設施發布核准');
+  var sheet = facilitySheet_(workbook, '設施發布核准', true);
   var index = Object.create(null), counts = Object.create(null);
   if (!sheet) return index;
   var rows = parkRowsAsObjects_(sheet, FACILITY_RELEASE_HEADERS_);
@@ -109,19 +130,16 @@ function facilityRankNearby_(lat, lon, records) {
 }
 
 /** Toilet adapter: no detail join, no candidate coordinates, no status promotion. */
-function getFacilityData_(kind) {
+function getFacilityData_(kind, details) {
   if (kind !== 'toilet') throw new Error('此資料適配器僅支援公廁類別');
-  var id = PropertiesService.getScriptProperties().getProperty('PARK_SHEET_ID');
-  if (!id) throw new Error('請先設定 PARK_SHEET_ID 指令碼屬性');
-  var workbook = SpreadsheetApp.openById(id), sheet = workbook.getSheetByName('公廁資料');
-  if (!sheet) throw new Error('公廁資料分頁不存在');
+  var workbook = facilityOpenWorkbook_(), sheet = facilitySheet_(workbook, '公廁資料');
   var rows = parkRowsAsObjects_(sheet, FACILITY_TOILET_HEADERS_);
   var releases = facilityReleaseIndex_(workbook), counts = Object.create(null);
   rows.forEach(function(row) {
     var key = facilityText_(row['公廁ID']);
     counts[key] = (counts[key] || 0) + 1;
   });
-  return rows.map(function(row) {
+  var results = rows.map(function(row) {
     var key = facilityText_(row['公廁ID']);
     if (!facilityRequiredText_(row['公廁ID']) || counts[key] !== 1 || row['縣市'] !== '新北市' ||
         ['可用','待驗收'].indexOf(row['資料狀態']) < 0 ||
@@ -140,17 +158,19 @@ function getFacilityData_(kind) {
       accessibility: facilityText_(row['無障礙設施']) || 'UNKNOWN',
       changingTable: facilityText_(row['尿布臺']) || 'UNKNOWN', publication: publication};
   }).filter(Boolean);
+  if (details) details.publishedCount = results.length;
+  return results;
 }
 
-function searchNearbyFacilities_(kind, lat, lon) {
+function searchNearbyFacilities_(kind, lat, lon, details) {
   if (kind !== 'park' && kind !== 'toilet') throw new Error('不支援的設施類別');
   if (!parkSearchCoordinate_(lat, lon)) return [];
-  if (kind === 'park') return parkSearch_(lat, lon, '全部');
-  return facilityRankNearby_(lat, lon, getFacilityData_('toilet'));
+  if (kind === 'park') return parkSearch_(lat, lon, '全部', details);
+  return facilityRankNearby_(lat, lon, getFacilityData_('toilet', details));
 }
 
-function toiletSearch_(lat, lon) {
-  return searchNearbyFacilities_('toilet', lat, lon);
+function toiletSearch_(lat, lon, details) {
+  return searchNearbyFacilities_('toilet', lat, lon, details);
 }
 
 function facilityWalkingUrl_(lat, lon) {

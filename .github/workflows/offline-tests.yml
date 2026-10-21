@@ -78,6 +78,16 @@ jobs:
           mkdir -p "$PAPAKING_CI_RESULTS"
           node --test --test-reporter=tap test/facilities/*.test.mjs | tee "$PAPAKING_CI_RESULTS/facilities.tap"
 
+      - name: Run LINE three-category routing and reply regressions
+        if: ${{ !cancelled() }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          node --test --test-reporter=tap test/line/*.test.mjs | tee "$PAPAKING_CI_RESULTS/line.tap"
+
       - name: Run parking core regressions with fixed fixtures
         if: ${{ !cancelled() }}
         env:

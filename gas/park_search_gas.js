@@ -28,12 +28,17 @@ function parkIntentKey_(source) {
 }
 
 function rememberParkIntent_(source, intent) {
+  if (typeof rememberFacilityIntent_ === 'function') return rememberFacilityIntent_(source,'park',intent);
   var key = parkIntentKey_(source);
   if (!key) return false;
   CacheService.getScriptCache().put(key, intent, PARK_INTENT_TTL);
   return true;
 }
 function takeParkIntent_(source) {
+  if (typeof takeFacilityIntent_ === 'function') {
+    var state=takeFacilityIntent_(source);
+    return state.kind==='park'?state.intent:null;
+  }
   var key = parkIntentKey_(source);
   if (!key) return null;
   var cache = CacheService.getScriptCache();
@@ -54,21 +59,20 @@ function parkDistanceKm_(a,b,c,d) {
   return 6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(1-h));
 }
 function parkRowsAsObjects_(sheet, required) {
-  var rows=sheet.getDataRange().getValues();
+  var rows;
+  try { rows=sheet.getDataRange().getValues(); }
+  catch(error) { throw facilityDataError_('資料表讀取失敗'); }
   if (!rows.length) return [];
   var headers=rows.shift().map(function(h){return String(h).trim();});
-  if (headers.some(function(h,i){return !h||headers.indexOf(h)!==i;})) throw new Error('公園資料欄位空白或重複');
-  (required||[]).forEach(function(h){if(headers.indexOf(h)<0) throw new Error('公園分頁缺少欄位：'+h);});
+  if (headers.some(function(h,i){return !h||headers.indexOf(h)!==i;})) throw facilityDataError_('公園資料欄位空白或重複');
+  (required||[]).forEach(function(h){if(headers.indexOf(h)<0) throw facilityDataError_('公園分頁缺少欄位：'+h);});
   return rows.map(function(row){var o={};headers.forEach(function(h,i){o[h]=row[i];});return o;});
 }
-function parkSearch_(lat,lon,intent) {
+function parkSearch_(lat,lon,intent,details) {
   if (!parkSearchCoordinate_(lat,lon)) return [];
   lat=Number(lat); lon=Number(lon);
-  var sheetId=PropertiesService.getScriptProperties().getProperty('PARK_SHEET_ID');
-  if (!sheetId) throw new Error('請先設定 PARK_SHEET_ID 指令碼屬性');
-  var ss=SpreadsheetApp.openById(sheetId);
-  var ps=ss.getSheetByName('公園資料'),fs=ss.getSheetByName('公園設施');
-  if (!ps||!fs) throw new Error('公園資料或公園設施分頁不存在');
+  var ss=facilityOpenWorkbook_();
+  var ps=facilitySheet_(ss,'公園資料'),fs=facilitySheet_(ss,'公園設施');
   var releases=facilityReleaseIndex_(ss);
   var tags=Object.create(null),types=Object.create(null);
   var parks=parkRowsAsObjects_(ps,['公園ID','公園名稱','縣市','行政區','緯度','經度','資料狀態']), counts=Object.create(null);
@@ -84,6 +88,7 @@ function parkSearch_(lat,lon,intent) {
     var playground=String(f['遊戲場名稱']||'').replace(/\s/g,'');
     types[id]=Boolean(types[id] || /共融/.test(playground) && !/(?:非|無|未設置|不是|不屬於)共融/.test(playground));
   });
+  var publishedCount=0;
   var results=parks.map(function(p){
     var a=Number(p['緯度']),b=Number(p['經度']);
     if (!parkSearchCoordinate_(p['緯度'],p['經度'])||String(p['資料狀態'])!=='可用') return null;
@@ -92,12 +97,14 @@ function parkSearch_(lat,lon,intent) {
     if (!id || counts[id]!==1 || ['台北市','新北市'].indexOf(city)<0) return null;
     var publication=facilityParkPublication_(p,releases);
     if (!publication) return null;
+    publishedCount++;
     // Feature filtering is Taipei-only. NTPC UNKNOWN data is never interpreted as absence.
     if (intent!=='全部' && city!=='台北市') return null;
     if (intent==='共融' && !types[id]) return null;
     if ((intent==='鞦韆'||intent==='溜滑梯') && (tags[id]||[]).indexOf(intent)<0) return null;
     return {kind:'park',name:String(p['公園名稱']||''),city:String(p['縣市']||''),district:String(p['行政區']||''),address:String(p['地址']||''),lat:a,lon:b,tags:city==='台北市'?(tags[id]||[]):[],id:id,sourceStatus:p['資料狀態'],sourceFingerprint:publication.sourceFingerprint,positionType:publication.positionType,publication:publication};
   }).filter(Boolean);
+  if(details) details.publishedCount=publishedCount;
   return facilityRankNearby_(lat,lon,results);
 }
 function parkNavigationUrl_(park) {
@@ -181,8 +188,8 @@ function testPapaKingRouting() {
   var source = { type: 'user', userId: 'TEST_PAPAKING_PARK_USER' };
   takeParkIntent_(source);
   var initial = takeParkIntent_(source);
-  if (initial !== null) throw new Error('直接分享位置應走停車查詢');
-  Logger.log('PASS 直接分享位置 → 停車查詢');
+  if (initial !== null) throw new Error('尚未選擇分類時狀態應為空');
+  Logger.log('PASS 未選擇分類時無公園意圖');
   var intent = parkIntentFromText_('附近有溜滑梯的公園');
   rememberParkIntent_(source, intent);
   var first = takeParkIntent_(source);
@@ -190,7 +197,7 @@ function testPapaKingRouting() {
   Logger.log('PASS 公園指令 → 分享位置');
   var second = takeParkIntent_(source);
   if (second !== null) throw new Error('公園查詢條件未清除');
-  Logger.log('PASS 公園查詢完成後恢復停車模式');
+  Logger.log('PASS 公園查詢完成後清除分類，需重新選擇');
   Logger.log('========== 分流測試完成 ==========');
 }
 
@@ -200,8 +207,9 @@ function buildParkFlexReply_(lat, lon, intent, fallback) {
   if (!parkSearchCoordinate_(lat,lon)) {
     return buildParkReply_(lat, lon, intent);
   }
-  var parks = parkSearch_(lat, lon, intent);
-  var text = formatParkReply_(parks,intent);
+  var details = {};
+  var parks = parkSearch_(lat, lon, intent, details);
+  var text = !parks.length && details.publishedCount !== undefined ? facilityEmptyMessage_('park',lat,lon,details) : formatParkReply_(parks,intent);
   if (fallback) fallback.text = text;
   if (!parks.length) return text;
   var cards = parks.map(function(p) {
