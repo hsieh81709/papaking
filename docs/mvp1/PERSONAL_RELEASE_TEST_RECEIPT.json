@@ -1,0 +1,45 @@
+{
+  "base_commit": "747622cbdf7a912847b6322e9f9315da18fbc0be",
+  "personal_before": {
+    "pass": 5,
+    "fail": 15,
+    "tests": 20
+  },
+  "personal_final": {
+    "pass": 23,
+    "fail": 0,
+    "known_risk_characterizations": 1
+  },
+  "affected": {
+    "pass": 413,
+    "fail": 0,
+    "skip": 0
+  },
+  "full_once": {
+    "node": 533,
+    "park_sources": 33,
+    "park_review": 22,
+    "worker": 25,
+    "total_pass": 613,
+    "fail": 0,
+    "skip": 0,
+    "known_risk_characterizations": 1
+  },
+  "syntax_checked": 14,
+  "protected_paths_unchanged": [
+    "sponsor-worker",
+    "gas/park_geocoding_gas.js",
+    "gas/park_b43_regeocode_gas.js",
+    "gas/park_b45_sync_gas.js",
+    "gas/park_search_gas.js",
+    "gas/facility_search_gas.js",
+    "gas/facility_line_gas.js",
+    "gas/appsscript.json",
+    "line-ingress"
+  ],
+  "external_production_requests": 0,
+  "original_data_modified": false,
+  "production_deployment": false,
+  "formal_mobile_smoke": "not_exercised",
+  "release_file_hashes": "PERSONAL_RELEASE_FILES.json"
+}

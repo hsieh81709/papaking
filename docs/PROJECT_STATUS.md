@@ -1,5 +1,7 @@
 # PapaKing 專案現況
 
+> 個人自用發布候選（2026-10-22）：新增明確啟用的personal-direct模式，僅指定User ID一對一；其他人／群組在query與回覆前忽略，保留資料核准、去重／額度／Flex備援。沿用同一GAS／LINE／Sheets，不要求第二環境。allowlist不等於驗簽，偽造本人ID仍有風險；未部署。見[個人發布手冊](mvp1/PERSONAL_RELEASE.md)。
+
 > P0-9實作補強：既有eec65cc程式之上新增回覆attempt限制、同快照400備援指紋與損壞狀態拒絕。新增8項先紅後綠；受影響390項通過，搜尋／停車核心不變。容量及正式安全／E2E仍未驗收；見[本輪實作驗收](mvp1/P0-9_IMPLEMENTATION_ACCEPTANCE.md)。以下382項等為前輪快照。
 
 > P0-9：版本7／部署者／任何人／LINE直連由使用者人工確認；正式manifest人工匯出與repo語義相同；version7 source／manifest版本綁定仍缺。離線加入origin閘門、持久去重／分類、額度鎖定與reply attempt；382項受影響測試通過，原11項安全規格已綠。但低容量、公開GAS DoS／舊部署、隔離E2E與人工發布核准仍阻擋上線。見[修復報告](mvp1/P0-9_REPAIR.md)與[測試](mvp1/P0-9_TEST_RESULTS.md)。以下為歷史快照。

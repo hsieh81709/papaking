@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-22",
+  "timezone": "Asia/Taipei",
+  "base_commit": "747622cbdf7a912847b6322e9f9315da18fbc0be",
+  "deployment_executed": false,
+  "webhook_changed": false,
+  "sheets_written": false,
+  "same_existing_project_only": true,
+  "files": [
+    {
+      "gas_editor_file": "程式碼.gs",
+      "repository_source": "gas/line_webhook_gas.js",
+      "bytes": 92559,
+      "sha256": "40f60f1b16055c5978d751e4d805e57b50b47df592aedf9390aad59123650ec2"
+    },
+    {
+      "gas_editor_file": "park_search_gas.gs",
+      "repository_source": "gas/park_search_gas.js",
+      "bytes": 14471,
+      "sha256": "8ed78c3153b332033bdaa4a23c30c884dca60c620751e6ffb180e91ab95ff157"
+    },
+    {
+      "gas_editor_file": "facility_search_gas.gs",
+      "repository_source": "gas/facility_search_gas.js",
+      "bytes": 11253,
+      "sha256": "f79be7342ab2f2e17c2fbad9f3c7b50ec0ad3b0a29c60589aa3853645d8427b9"
+    },
+    {
+      "gas_editor_file": "facility_line_gas.gs",
+      "repository_source": "gas/facility_line_gas.js",
+      "bytes": 13010,
+      "sha256": "411e76560c9ab5c4b5cd18dd6b806daa7f0f7df7db83b63c4492fc6376d53049"
+    },
+    {
+      "gas_editor_file": "webhook_security_gas.gs",
+      "repository_source": "gas/webhook_security_gas.js",
+      "bytes": 4744,
+      "sha256": "5899ef6959e301893bc8bdae0d226eeeea37f6adb0cd45e7ee9e4ab93d4642a5"
+    },
+    {
+      "gas_editor_file": "webhook_state_gas.gs",
+      "repository_source": "gas/webhook_state_gas.js",
+      "bytes": 6249,
+      "sha256": "ab57dc7b6992a781181928dd0ca8aa71c7552fbe8512a421d6150ed91c8d36e4"
+    }
+  ],
+  "configuration_example": "config/personal-script-properties.example.json"
+}

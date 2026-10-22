@@ -1,0 +1,9 @@
+﻿項目,預期,實際觀察,功能結果,導航驗證,實際GAS版本,測試時間,備註
+主選單,三分類正常,,NOT_EXERCISED,NOT_EXERCISED,,,
+停車,本人單次1km查詢及driving導航,,NOT_EXERCISED,NOT_EXERCISED,,,可能使用外部API額度，部署後另准
+臺北公園暨遊具,既有篩選、3km／5筆及代表位置導航,,NOT_EXERCISED,NOT_EXERCISED,,,
+新北／跨界公園,僅核准資料、跨市依距離排序；無核准明確提示,,NOT_EXERCISED,NOT_EXERCISED,,,零核准時導航保持NOT_EXERCISED
+雙北公廁,僅核准資料、UNKNOWN不改無／24h,,NOT_EXERCISED,NOT_EXERCISED,,,零核准時導航保持NOT_EXERCISED
+切換／返回／TTL,只查新分類、未分類／600秒過期提示重選,,NOT_EXERCISED,NOT_EXERCISED,,,
+本人群組訊息,完全不回覆、不查詢、不扣額度,,NOT_EXERCISED,NOT_EXERCISED,,,不用新增帳號或Bot
+Flex與導航,正常圖卡手機可讀、Maps目的地正確,,NOT_EXERCISED,NOT_EXERCISED,,,400／timeout故障僅離線驗證，不正式注入

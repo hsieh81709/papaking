@@ -1,12 +1,43 @@
-/** P0-9 trusted-origin boundary. GAS cannot read LINE signature headers.
- * Only an independent raw-byte LINE verifier may sign this envelope.
- * No secrets configured by this file; missing config always rejects.
+/** Explicit request modes. Default signed mode validates a trusted origin.
+ * personal-direct is an opt-in owner allowlist ONLY, never LINE authentication.
+ * No production configuration is written by this module.
  */
 function papaKingSecurityConfig_() {
   var p = PropertiesService.getScriptProperties();
-  var config = {secret:p.getProperty('PK_ORIGIN_SECRET'),aud:p.getProperty('PK_ORIGIN_AUDIENCE'),channel:p.getProperty('PK_LINE_CHANNEL')};
+  var enabled=p.getProperty('PK_WEBHOOK_ENABLED');
+  if (enabled !== null && enabled !== 'true') throw new Error('Webhook disabled');
+  var mode=p.getProperty('PK_WEBHOOK_MODE') || 'signed';
+  var owner=p.getProperty('PK_ALLOWED_LINE_USER_ID');
+  if (owner !== null && !/^U[a-fA-F0-9]{32}$/.test(owner)) throw new Error('Invalid personal user configuration');
+  if (mode === 'personal-direct') {
+    var budget=Number(p.getProperty('MONTHLY_BUDGET'));
+    if (!owner || !isFinite(budget) || budget <= 0 || Math.floor(budget) !== budget) throw new Error('Personal owner and positive monthly budget required');
+    // Fixed namespace: changing an untrusted body.destination cannot evade dedup.
+    return {mode:mode,owner:owner,channel:'personal-direct',destination:p.getProperty('PK_LINE_CHANNEL')};
+  }
+  if (mode !== 'signed') throw new Error('Unknown webhook mode');
+  var config = {mode:mode,owner:owner,secret:p.getProperty('PK_ORIGIN_SECRET'),aud:p.getProperty('PK_ORIGIN_AUDIENCE'),channel:p.getProperty('PK_LINE_CHANNEL')};
   if (!config.secret || config.secret.length < 32 || !config.aud || !config.channel) throw new Error('Origin configuration required');
   return config;
+}
+function papaKingVerifyRequest_(e) {
+  var config=papaKingSecurityConfig_();
+  if (config.mode === 'signed') return papaKingVerifyEnvelope_(e,config);
+  if (!e || !e.postData || typeof e.postData.contents !== 'string' ||
+      e.postData.contents.length > 40000 || unescape(encodeURIComponent(e.postData.contents)).length > 40000) throw new Error('Invalid personal request');
+  var body=JSON.parse(e.postData.contents);
+  if (!body || typeof body.destination !== 'string' || !body.destination ||
+      config.destination && body.destination !== config.destination) throw new Error('Invalid bot destination');
+  return {config:config,body:body,authentication:'NONE_ALLOWLIST_ONLY'};
+}
+function papaKingAuthorizedEvents_(events, owner) {
+  if (!Array.isArray(events) || events.length > 32) throw new Error('Invalid batch');
+  if (!owner) return events; // Existing signed multi-user contract is unchanged.
+  return events.filter(function(event) {
+    var source=event && event.source;
+    return event.type === 'message' && source && source.type === 'user' && source.userId === owner &&
+      source.groupId === undefined && source.roomId === undefined;
+  });
 }
 function papaKingMac_(domain, value, secret) {
   return Utilities.base64Encode(Utilities.computeHmacSha256Signature(domain + '\n' + JSON.stringify(value), secret, Utilities.Charset.UTF_8));
@@ -17,8 +48,9 @@ function papaKingEqual_(a, b) {
   for (var i = 0; i < a.length; i++) different |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return different === 0;
 }
-function papaKingVerifyEnvelope_(e) {
-  var config = papaKingSecurityConfig_();
+function papaKingVerifyEnvelope_(e, config) {
+  config = config || papaKingSecurityConfig_();
+  if (config.mode !== 'signed') throw new Error('Signed mode required');
   if (!e || !e.postData || typeof e.postData.contents !== 'string' || e.postData.contents.length > 60000) throw new Error('Invalid envelope');
   var x = JSON.parse(e.postData.contents);
   if (!x || x.v !== 1 || x.aud !== config.aud || x.channel !== config.channel ||
@@ -31,6 +63,10 @@ function papaKingVerifyEnvelope_(e) {
   return {envelope:x,config:config,body:body};
 }
 function papaKingAck_(request, status) {
+  if (request && request.config.mode === 'personal-direct') {
+    // ContentService cannot set an HTTP status: this is NOT an authenticated ACK.
+    return ContentService.createTextOutput(status === 'accepted' ? 'OK' : status).setMimeType(ContentService.MimeType.TEXT);
+  }
   var ack = {v:1,status:status};
   if (request) {
     ack.nonce = request.envelope.nonce;

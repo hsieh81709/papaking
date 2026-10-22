@@ -107,7 +107,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$PAPAKING_CI_RESULTS"
-          node --test --test-reporter=tap test/p09/*.test.mjs test/security-spec/*.test.mjs test/preflight/*.test.mjs | tee "$PAPAKING_CI_RESULTS/security.tap"
+          node --test --test-reporter=tap test/personal/*.test.mjs test/p09/*.test.mjs test/security-spec/*.test.mjs test/preflight/*.test.mjs | tee "$PAPAKING_CI_RESULTS/security.tap"
 
       - name: Run official park source parsing and evidence regressions
         if: ${{ !cancelled() }}

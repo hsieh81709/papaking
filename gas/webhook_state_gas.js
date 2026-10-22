@@ -29,10 +29,13 @@ function papaKingState_(change) {
           r.replyAttempts !== undefined && r.replyAttempts !== 1 && r.replyAttempts !== 2) throw new Error('Invalid event record');
     });
     var now = Date.now();
+    // Personal mode retains DONE beyond every accepted event's validity:
+    // 600s stale horizon + up to 60s future timestamp. Never GC uncertain work.
+    var retention=p.getProperty('PK_WEBHOOK_MODE') === 'personal-direct' ? 660000 : 86400000;
     Object.keys(state.events).forEach(function(k) {
       var r=state.events[k];
       // Never garbage-collect unfinished/uncertain work automatically.
-      if (r.status === 'DONE' && now-r.time > 86400000) delete state.events[k];
+      if (r.status === 'DONE' && now-r.time > retention) delete state.events[k];
     });
     Object.keys(state.intents).forEach(function(k){if(state.intents[k].expiresAt + 21600000 < now) delete state.intents[k];});
     var result = change(state);

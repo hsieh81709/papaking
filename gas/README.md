@@ -1,8 +1,8 @@
 # Google Apps Script 版本
 
-無伺服器實作的 LINE Bot。P0-9 為未部署候選；平台費用、額度與隔離驗收仍待確認。
+無伺服器實作的 LINE Bot。目前個人發布候選沿用既有 GAS／LINE／Sheets，不建立第二套；操作與剩餘風險見[個人發布手冊](../docs/mvp1/PERSONAL_RELEASE.md)。尚未部署。
 
-## 🚀 部署步驟
+## 通用簽署模式部署參考（非本輪個人直連步驟）
 
 1. 前往 [Google Apps Script](https://script.google.com)
 2. 建立新專案
@@ -132,3 +132,14 @@ Serving 包為六個 JS 檔：Webhook、公園搜尋、公廁共用搜尋／LINE
 事件及分類共用 `pk_state_v1` 單值快照，ScriptLock 短鎖，32 events／16 scopes／7800 UTF-8 bytes 任一先到即拒絕；不能以清空帳本恢復服務。DONE 保留24h、來源事件超10分鐘拒絕；STARTED／UNKNOWN／RECEIVED不自動刪除或重做。容量和同步時限尚未經真 GAS 量測或使用者核定，**不能據此直接上線**。月額度與每把TDX固定分鐘預算改用持久保留與鎖；不是新增每日費用上限，也不是rolling60秒保證。
 
 [最小入口](../line-ingress/handler.mjs)沒有平台資源或部署設定；只驗簽、一次轉送、確認signed ack，GAS仍是唯一查詢／LINE回覆 owner。預設拒絕直連會使現有 LINE→GAS 的裸body失效，故禁止單獨覆蓋正式GAS。發布／回復與版本7人工紀錄見[P0-9手冊](../docs/mvp1/P0-9_RELEASE_RUNBOOK.md)。
+
+
+## 個人自用直連（離線候選，正式切換另待核准）
+
+以 `PK_WEBHOOK_MODE=personal-direct` 明確啟用；`PK_ALLOWED_LINE_USER_ID` 必須是本人U開頭32位hex ID，且既有 `MONTHLY_BUDGET` 必須為正整數。其他使用者、group／room及其訊息在事件帳本、quota及LINE回覆之前被忽略。可用 `PK_WEBHOOK_ENABLED=false` 停止新版入口；未設定mode仍為既有signed模式，缺origin secret不會自動降級為直連。
+
+個人模式不需要獨立入口或origin secret；若設定 `PK_LINE_CHANNEL`，只作bot destination比對，不是驗簽。**知道本人ID的人仍能偽造來源並消耗配額；allowlist不是LINE簽章驗證。** 範例設定見[personal-script-properties.example.json](../config/personal-script-properties.example.json)，只含佔位符，不能直接當正式設定。既有token、TDX、PARK_SHEET_ID、月計數及QUOTA_SALT保持不變；不要把真實ID或憑證提交Git。
+
+個人模式正常DONE事件保留超過11分鐘才GC（10分鐘stale限制＋60秒future容忍）；signed模式維持24h。兩者的RECEIVED／STARTED／UNKNOWN皆不自動清理或重做。單值上限仍32事件／16 scopes／7800 bytes；連續大量操作或未決事件會停新工作，不能清空帳本繞過。
+
+只更新同一GAS專案的六個serving檔，沿用同一部署URL、LINE Bot與Google Sheets；不打包任何地理編碼／B4-5工具。新北公園及雙北公廁仍須人工發布核准，原9筆座標不自動核准、不覆寫。個人手機驗收、版本7回復、明確核准範圍與實際回歸結果見[發布手冊](../docs/mvp1/PERSONAL_RELEASE.md)。

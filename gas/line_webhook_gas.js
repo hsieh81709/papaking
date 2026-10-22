@@ -160,10 +160,12 @@ function buildPapaKingLocationPrompt_(kind) {
 
 function doPost(e) {
   var request;
-  try { request = papaKingVerifyEnvelope_(e); }
+  try { request = papaKingVerifyRequest_(e); }
   catch (error) { return papaKingAck_(null, 'rejected'); }
   try {
-    var work = papaKingAcceptEvents_(request.body.events, request.config.channel);
+    var events=papaKingAuthorizedEvents_(request.body.events,request.config.owner);
+    if (!events.length) return papaKingAck_(request,'accepted'); // No writes/replies for ignored users/groups.
+    var work = papaKingAcceptEvents_(events, request.config.channel);
     driveTimeCallsLeft = DRIVE_TIME_BUDGET;
     for (var i = 0; i < work.length; i++) {
       var item = work[i], event = item.event;
