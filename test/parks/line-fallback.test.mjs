@@ -53,5 +53,5 @@ test('PK-05 explicit fallback respects LINE text limits and is not included in F
 });
 test('PK-05 transport exceptions are not retried and the webhook contains the event failure',()=>{
  const h=replies([200]);h.context.postLineReply=()=>{throw new Error('synthetic transport failure');};
- h.query();assert.ok(h.logs.some(s=>String(s).includes('synthetic transport failure')));assert.equal(h.searches(),1);
+ h.query();assert.ok(h.logs.some(s=>String(s).includes('Webhook event uncertain')));assert.equal(h.searches(),1);
 });

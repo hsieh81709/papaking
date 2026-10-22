@@ -9,7 +9,7 @@
 // 需要的屬性：LINE_CHANNEL_ACCESS_TOKEN、
 // TDX_KEYS（JSON 陣列，格式 [{"id":"...","secret":"..."}]）
 // 註：GAS 的 doPost(e) 讀不到 HTTP 標頭，拿不到 X-Line-Signature，
-//     所以做不了 LINE 官方的簽章驗證，Channel secret 在這裡沒有用處。
+//     LINE Channel secret 僅供獨立入口使用；GAS 驗證不同的 origin HMAC secret。
 
 var PROPS = PropertiesService.getScriptProperties()
 var LINE_CHANNEL_ACCESS_TOKEN = PROPS.getProperty('LINE_CHANNEL_ACCESS_TOKEN')
@@ -101,7 +101,6 @@ var GOOGLE_SEARCH_PB = '!1z{Q}!4m8!1m3!1d3000!2d{LNG}!3d{LAT}!3m2!1i1024!2i768!4
   '!1m6!1m2!1i0!2i0!2m2!1i1024!2i20!1m6!1m2!1i0!2i748!2m2!1i1024!2i768!34m19!2b1!3b1!4b1!6b1!8m6!1b1!3b1!4b1' +
   '!5b1!6b1!7b1!9b1!12b1!14b1!20b1!23b1!25b1!26b1!31b1!37m1!1e81!42b1!49m10!3b1!6m2!1b1!2b1!7m2!1e3!2b1!8b1' +
   '!9b1!10e2!50m3!2e2!3m1!3b1!61b1!67m5!7b1!10b1!14b1!15m1!1b0!69i781!77b1'
-var MAX_EVENTS = 10
 // 直線最近的前幾筆再問 Google 開車時間（一般帳號 directions 每日 1,000 次）
 var DRIVE_TIME_SEGMENTS = 3
 var DRIVE_TIME_CARPARKS = 2
@@ -122,7 +121,7 @@ var GOOGLE_DIRECTIONS_PB = '!1m2!1z{FROM}!6e0!1m2!1z{TO}!6e0' +
   '!17m1!3e0!20m6!1e3!2e3!5e2!6b1!8b1!14b1!46m1!1b0!96b1!99b1!15m3!1s{TOKEN}!7e81!15i10142' +
   '!20m28!1m6!1m2!1i0!2i0!2m2!1i530!2i768!1m6!1m2!1i974!2i0!2m2!1i1024!2i768' +
   '!1m6!1m2!1i0!2i0!2m2!1i1024!2i20!1m6!1m2!1i0!2i748!2m2!1i1024!2i768!27b1!40i781!47m2!8b1!10e2'
-// 一次 doPost 執行的 directions 總預算：端點不驗來源，一個 POST 塞滿 MAX_EVENTS 個位置事件也只能花這麼多，不會乘上事件數
+// 一次已驗證 doPost 的 directions 總預算；有限批次也不會乘上事件數
 var DRIVE_TIME_BUDGET = DRIVE_TIME_SEGMENTS + DRIVE_TIME_CARPARKS
 var driveTimeCallsLeft = DRIVE_TIME_BUDGET
 
@@ -155,66 +154,40 @@ function buildPapaKingLocationPrompt_(kind) {
   kind = kind || 'park';
   var name = kind === 'parking' ? '停車' : kind === 'toilet' ? '公廁' : '公園';
   return {type:'text',text:'請分享位置，搜尋附近' + name + '（' + (kind === 'parking' ? '1' : '3') + ' 公里內）。分類有效10分鐘，完成一次查詢後請重新選擇。',
-    quickReply:{items:[{type:'action',action:{type:'location',label:'分享位置'}},
-      {type:'action',action:{type:'message',label:'返回主選單',text:'選單'}}]}};
+    quickReply:{items:[{type:'action',action:{type:'location',label:'分享位置'}}].concat(kind === 'park' ? [['臺北溜滑梯','附近有溜滑梯的公園'],['臺北鞦韆','附近有鞦韆的公園'],['臺北共融','附近共融公園']].map(function(pair){return {type:'action',action:{type:'message',label:pair[0],text:pair[1]}};}) : []).concat([
+      {type:'action',action:{type:'message',label:'返回主選單',text:'選單'}}])}};
 }
 
 function doPost(e) {
+  var request;
+  try { request = papaKingVerifyEnvelope_(e); }
+  catch (error) { return papaKingAck_(null, 'rejected'); }
   try {
-    if (!e || !e.postData) {
-      return ContentService.createTextOutput('Invalid request')
-        .setMimeType(ContentService.MimeType.TEXT);
-    }
-
-    var data = JSON.parse(e.postData.contents);
-    var events = data.events || [];
-
-    if (events.length > MAX_EVENTS) {
-      Logger.log('事件數 ' + events.length + ' 超過上限，只處理前 ' + MAX_EVENTS + ' 筆');
-      events = events.slice(0, MAX_EVENTS);
-    }
-
-    for (var i = 0; i < events.length; i++) {
-      var event = events[i];
-      if (event.type !== 'message' || !event.message) continue;
-
-      var isIdCommand =
-        event.message.type === 'text' &&
-        /^id$/i.test((event.message.text || '').trim());
-
-      if (event.message.type !== 'text' && event.message.type !== 'location') continue;
-
+    var work = papaKingAcceptEvents_(request.body.events, request.config.channel);
+    driveTimeCallsLeft = DRIVE_TIME_BUDGET;
+    for (var i = 0; i < work.length; i++) {
+      var item = work[i], event = item.event;
+      if (!papaKingStartEvent_(item.key)) continue;
+      var previousOwner=papaKingCurrentEventKey_;
+      papaKingCurrentEventKey_=item.key;
       try {
-        if (isIdCommand) {
-
-          if (event.source &&
-              event.source.type === 'user' &&
-              event.source.userId) {
-            replyLine(
-              event.replyToken,
-              'LINE userId：' + event.source.userId
-            );
-          }
-
-        } else if (typeof handlePapaKingMessage_ === 'function') {
-          handlePapaKingMessage_(event);
-        } else {
-          replyLine(event.replyToken, '系統暫時無法查詢，請稍後再試。');
+        if (event.type === 'message' && event.message &&
+            (event.message.type === 'text' || event.message.type === 'location')) {
+          if (event.message.type === 'text' && /^id$/i.test(String(event.message.text || '').trim())) {
+            if (event.source.type === 'user' && event.source.userId) replyLine(event.replyToken, 'LINE userId：' + event.source.userId);
+          } else handlePapaKingMessage_(event);
         }
-
-      } catch (err) {
-        Logger.log('事件 ' + i + ' 處理失敗: ' + err);
-      }
+        papaKingFinishEvent_(item.key, 'DONE');
+      } catch (error) {
+        // Query or delivery may have started: never automatically execute again.
+        Logger.log('Webhook event uncertain');
+        papaKingFinishEvent_(item.key, 'UNKNOWN');
+      } finally { papaKingCurrentEventKey_=previousOwner; }
     }
-
-    return ContentService.createTextOutput('OK')
-      .setMimeType(ContentService.MimeType.TEXT);
-
-  } catch (err) {
-    Logger.log('doPost error: ' + err);
-
-    return ContentService.createTextOutput('Error')
-      .setMimeType(ContentService.MimeType.TEXT);
+    return papaKingAck_(request, 'accepted');
+  } catch (error) {
+    Logger.log('Webhook state unavailable');
+    return papaKingAck_(request, 'unavailable');
   }
 }
 
@@ -263,27 +236,41 @@ function purgeOldQuotaKeys(prefix) {
 // 白名單：不看個人額度，全域預算可用到 100%；其他人個人額度看 MONTHLY_QUOTA，全域只能用到 PUBLIC_SHARE。
 // 沒有 userId 的事件（群組裡沒同意隱私的人）只受全域預算限制
 function consumeQuota(source) {
+  try { return papaKingWithLock_(function(){ return consumeQuotaLocked_(source); }); }
+  catch (error) { Logger.log('Quota reservation unavailable'); return QUOTA_STORE_FULL_TEXT; }
+}
+
+function consumeQuotaLocked_(source) {
   if (!MONTHLY_QUOTA && !MONTHLY_BUDGET) return null;
   var prefix = quotaPrefix();
   purgeOldQuotaKeys(prefix);
   var id = source.userId || ''; // 群組／聊天室 ID 不是使用者 ID，不套個人額度或白名單
   var listed = QUOTA_WHITELIST.indexOf(id) >= 0;
   var totalKey = prefix + 'total';
-  var total = Number(PROPS.getProperty(totalKey)) || 0;
+  var totalRaw = PROPS.getProperty(totalKey);
+  var total = totalRaw === null ? 0 : Number(totalRaw);
+  if (!isFinite(total) || total < 0 || Math.floor(total) !== total) return QUOTA_STORE_FULL_TEXT;
   if (MONTHLY_BUDGET && total >= Math.floor(MONTHLY_BUDGET * (listed ? 1 : PUBLIC_SHARE))) return QUOTA_BUDGET_TEXT;
   var userKey = MONTHLY_QUOTA && id && !listed ? quotaUserKey(prefix, id) : null;
   var stored = userKey ? PROPS.getProperty(userKey) : null;
+  if (userKey && stored !== null && (!isFinite(Number(stored)) || Number(stored) < 0 || Math.floor(Number(stored)) !== Number(stored))) return QUOTA_STORE_FULL_TEXT;
   if (userKey && (Number(stored) || 0) >= MONTHLY_QUOTA) return QUOTA_USER_TEXT;
   if (userKey) {
     // 屬性庫 500KB 塞滿等原因使計數無法保存時，不放行未計數的查詢
     try {
-      PROPS.setProperty(userKey, String((Number(stored) || 0) + 1));
+      var nextUser = String((Number(stored) || 0) + 1);
+      PROPS.setProperty(userKey, nextUser);
+      if (PROPS.getProperty(userKey) !== nextUser) throw new Error('Quota reservation not confirmed');
     } catch (err) {
       Logger.log('額度計數寫入失敗: ' + err);
       return QUOTA_STORE_FULL_TEXT; // 舊使用者也不能在計數失敗時無限放行
     }
   }
-  if (MONTHLY_BUDGET) PROPS.setProperty(totalKey, String(total + 1));
+  if (MONTHLY_BUDGET) {
+    var nextTotal = String(total + 1);
+    PROPS.setProperty(totalKey, nextTotal);
+    if (PROPS.getProperty(totalKey) !== nextTotal) return QUOTA_STORE_FULL_TEXT;
+  }
   return null;
 }
 
@@ -454,7 +441,12 @@ function replyLine(token, items, fallbackText) {
 }
 
 function papaKingPostReply_(token, messages) {
-  try { return postLineReply(token, messages); }
+  try {
+    papaKingReplyPhase_('REPLY_STARTED'); // Durable before each primary/fallback attempt.
+    var code=postLineReply(token, messages);
+    papaKingReplyPhase_(code === 200 ? 'DELIVERED' : code >= 500 ? 'UNKNOWN_REPLY' : 'REJECTED');
+    return code;
+  }
   catch (error) { error.papaKingReplyAttempted = true; throw error; }
 }
 
@@ -470,7 +462,7 @@ function postLineReply(token, messages) {
   });
   var code = response.getResponseCode();
   if (code !== 200) {
-    Logger.log('LINE 回覆失敗 ' + code + ': ' + response.getContentText());
+    Logger.log('LINE 回覆失敗 status=' + code);
   }
   return code;
 }
@@ -509,32 +501,41 @@ function getTDXToken(keyIndex) {
   return data.access_token || null;
 }
 
-// 每把金鑰本分鐘的用量放在 CacheService（key: tdx_rate_<id>_<minute>，60 秒過期）
+// 舊 Cache key helper 僅供歷史診斷相容；安全預算以 papaKingRateProperty_ 的 Properties 為準。
 function tdxRateKey(keyIndex) {
   return 'tdx_rate_' + TDX_KEYS[keyIndex].id + '_' + Math.floor(Date.now() / 60000);
 }
 
 // 把金鑰標記為本分鐘用滿：429、401/403、拿不到 token 都不該在這一分鐘內再試
 function markTDXKeyExhausted(keyIndex) {
-  CacheService.getScriptCache().put(tdxRateKey(keyIndex), String(TDX_RATE_LIMIT), 60);
+  papaKingWithLock_(function() {
+    var key = papaKingRateProperty_(keyIndex);
+    PROPS.setProperty(key, String(TDX_RATE_LIMIT));
+  });
 }
-
-// 挑本分鐘用量最少且未滿的金鑰並記一次用量；全部用滿回傳 -1
+function papaKingRateProperty_(keyIndex) {
+  return 'pk_rate_' + papaKingHash_(TDX_KEYS[keyIndex].id).slice(0,24) + '_' + Math.floor(Date.now()/60000);
+}
 function pickTDXKey() {
-  var cache = CacheService.getScriptCache();
-  var rateKeys = TDX_KEYS.map(function (_, i) { return tdxRateKey(i); });
-  var counts = cache.getAll(rateKeys);
-  var best = -1;
-  var bestCount = TDX_RATE_LIMIT;
-  for (var i = 0; i < rateKeys.length; i++) {
-    var count = Number(counts[rateKeys[i]] || 0);
-    if (count < bestCount) {
-      best = i;
-      bestCount = count;
-    }
-  }
-  if (best >= 0) cache.put(rateKeys[best], String(bestCount + 1), 60);
-  return best;
+  try {
+    return papaKingWithLock_(function() {
+      var all = PROPS.getProperties(), minute = Math.floor(Date.now()/60000);
+      Object.keys(all).forEach(function(k){if(k.indexOf('pk_rate_')===0 && Number(k.split('_').pop()) < minute) PROPS.deleteProperty(k);});
+      var best=-1, bestCount=TDX_RATE_LIMIT;
+      TDX_KEYS.forEach(function(_,i) {
+        var raw=PROPS.getProperty(papaKingRateProperty_(i));
+        var count=raw===null?0:Number(raw);
+        if (!isFinite(count) || count<0 || Math.floor(count)!==count) throw new Error('Invalid provider budget');
+        if(count<bestCount){best=i;bestCount=count;}
+      });
+      if(best>=0) {
+        var key=papaKingRateProperty_(best),next=String(bestCount+1);
+        PROPS.setProperty(key,next);
+        if(PROPS.getProperty(key)!==next) throw new Error('Provider reservation not confirmed');
+      }
+      return best;
+    });
+  } catch(error) { Logger.log('TDX reservation unavailable'); return -1; }
 }
 
 // 帶金鑰輪替的 TDX GET：用量計數挑金鑰，這把不能用就標記用滿換下一把；全部用滿回傳 429 的空 response

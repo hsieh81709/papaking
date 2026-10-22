@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import {harness} from './helpers.mjs';
 
 function router(files=['park_search_gas.js','line_webhook_gas.js']) {
- const h=harness(files),c=h.context,routes=[],replies=[],cache=new Map();let now=0;
+ const h=harness(files),c=h.context,routes=[],replies=[],cache=new Map();let now=Date.parse('2026-10-22T00:00:00Z');
+ class Clock extends Date {constructor(...a){super(...(a.length?a:[now]));}static now(){return now;}}
+ c.Date=Clock;
  c.CacheService.getScriptCache=()=>({
   put:(key,value,seconds)=>cache.set(key,{value,expires:now+seconds*1000}),
   get:key=>{const item=cache.get(key);if(!item)return null;if(now>=item.expires){cache.delete(key);return null;}return item.value;},

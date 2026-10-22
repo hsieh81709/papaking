@@ -1,5 +1,7 @@
 # PapaKing 專案現況
 
+> P0-9：版本7／部署者／任何人／LINE直連由使用者人工確認；正式manifest內容及version7 source對照仍缺。離線加入origin閘門、持久去重／分類、額度鎖定與reply attempt；382項受影響測試通過，原11項安全規格已綠。但低容量、公開GAS DoS／舊部署、隔離E2E與人工發布核准仍阻擋上線。見[修復報告](mvp1/P0-9_REPAIR.md)與[測試](mvp1/P0-9_TEST_RESULTS.md)。以下為歷史快照。
+
 > P0-8已收到5份GAS人工匯出並完成離線差異核對；缺manifest及deployment對照，尚未證明等於live版本。附件停車對候選契約52／72、本機受影響135／135，詳見[匯出核對報告](mvp1/P0-8_EXPORTED_GAS_REVIEW.md)；不是正式環境驗收或部署核准。
 
 > P0-7：雙北公廁adapter與提示完成離線適配，221項受影響測試通過；沒有新增資料核准或正式部署，原11安全阻擋未解。實際來源及授權限制見[P0-7報告](mvp1/P0-7_TAIPEI_TOILETS.md)。

@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
+import {trustedDriver} from '../p09/helpers.mjs';
 export const fixture = JSON.parse(fs.readFileSync(new URL('./fixtures/core.json', import.meta.url)));
 export const plain = value => JSON.parse(JSON.stringify(value));
 export const response = (code, body = []) => ({getResponseCode:()=>code,getContentText:()=>typeof body==='string'?body:JSON.stringify(body)});
@@ -23,11 +24,15 @@ export function harness(properties={}) {
   const propertyService={getProperty:k=>props[k]??null,getProperties:()=>({...props}),setProperty(k,v){props[k]=String(v);},deleteProperty(k){delete props[k];}};
   function geocoder(){return {setLanguage(){return this;},setRegion(){return this;},reverseGeocode:(...a)=>h.geocode(...a),geocode:(...a)=>h.geocode(...a)};}
   const context=vm.createContext({Date:Clock,Logger:{log:m=>logs.push(String(m))},PropertiesService:{getScriptProperties:()=>propertyService},CacheService:{getScriptCache:()=>cache},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(h.locked)return false;h.locked=true;return true;},releaseLock:()=>{h.locked=false;}})},
     UrlFetchApp:{fetch,fetchAll:rs=>rs.map(r=>fetch(r.url,r))},
     Maps:{newGeocoder:geocoder,DirectionFinder:{Mode:{DRIVING:'driving'}},newDirectionFinder(){const d={setOrigin(){return d;},setDestination(){return d;},setMode(){return d;},getDirections:()=>h.directions()};return d;}},
     Utilities:{formatDate(d){const parts=new Intl.DateTimeFormat('en',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit'}).formatToParts(d);return parts.find(p=>p.type==='year').value+parts.find(p=>p.type==='month').value;},getUuid:()=> 'fixture-uuid',DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,s)=>Array.from(crypto.createHash('sha256').update(s).digest()),base64EncodeWebSafe:s=>Buffer.from(s).toString('base64url')},
     ContentService:{MimeType:{TEXT:'text'},createTextOutput:value=>({value,setMimeType(){return this;}})}
   });
   vm.runInContext(fs.readFileSync(new URL('../../gas/line_webhook_gas.js',import.meta.url),'utf8'),context);
+  vm.runInContext(fs.readFileSync(new URL('../../gas/webhook_state_gas.js',import.meta.url),'utf8'),context);
+  vm.runInContext(fs.readFileSync(new URL('../../gas/webhook_security_gas.js',import.meta.url),'utf8'),context);
+  trustedDriver(context,props);
   h.c=context;h.propertyService=propertyService;return h;
 }

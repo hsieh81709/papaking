@@ -1,0 +1,78 @@
+{
+  "date": "2026-10-22",
+  "timezone": "Asia/Taipei",
+  "base": "51f5f524255ba958e48ac862a3c172b0dd47913f",
+  "syntax_checks": 7,
+  "affected_tests": {
+    "pass": 382,
+    "fail": 0,
+    "skip": 0
+  },
+  "original_security_baseline": {
+    "pass": 0,
+    "fail": 11
+  },
+  "protected_paths_unchanged": [
+    "gas/park_search_gas.js",
+    "gas/facility_search_gas.js",
+    "gas/appsscript.json",
+    "gas/park_geocoding_gas.js",
+    "gas/park_b43_regeocode_gas.js",
+    "gas/park_b45_sync_gas.js",
+    "sponsor-worker/"
+  ],
+  "unchanged_webhook_function_blocks": 95,
+  "original_webhook_function_blocks": 104,
+  "core_functions_unchanged": [
+    "handleLocation",
+    "buildReply",
+    "parseOnStreet",
+    "renderOnStreet",
+    "parseParking",
+    "renderParking",
+    "rankSections",
+    "driveTime",
+    "tdxFetch",
+    "tdxFetchAll",
+    "ntpcRowsFromPages",
+    "twd97ToWgs84"
+  ],
+  "candidate_files": [
+    {
+      "path": "gas/line_webhook_gas.js",
+      "sha256": "a2c9294fb19eb9fd739e591d6cf970c851c4ba1e74967d4367f661037eaa91d3"
+    },
+    {
+      "path": "gas/park_search_gas.js",
+      "sha256": "8ed78c3153b332033bdaa4a23c30c884dca60c620751e6ffb180e91ab95ff157"
+    },
+    {
+      "path": "gas/facility_search_gas.js",
+      "sha256": "f79be7342ab2f2e17c2fbad9f3c7b50ec0ad3b0a29c60589aa3853645d8427b9"
+    },
+    {
+      "path": "gas/facility_line_gas.js",
+      "sha256": "411e76560c9ab5c4b5cd18dd6b806daa7f0f7df7db83b63c4492fc6376d53049"
+    },
+    {
+      "path": "gas/webhook_security_gas.js",
+      "sha256": "102c12174e6319fdd3dfda5f8b50df0af54b5bed281f9a1b7da3dc7cac2e437f"
+    },
+    {
+      "path": "gas/webhook_state_gas.js",
+      "sha256": "29c1b58fe5988ae091fb6d89521010494693fe474651a6c66fddc4d97537e470"
+    },
+    {
+      "path": "line-ingress/handler.mjs",
+      "sha256": "431ee881aa4d0ef3124491de55b5b2dd854e1a29f8daabde27be98afc8485fec"
+    },
+    {
+      "path": "gas/appsscript.json",
+      "sha256": "ef7bc5603e696e4a8b983341d90aac207d3f81c5e1d95e839664bdfd415ca170"
+    }
+  ],
+  "formal_manifest_diff": "blocked: content not received",
+  "deployment_match": "not established",
+  "production_operations": false,
+  "network_calls_to_production": 0
+}

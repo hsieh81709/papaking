@@ -1,12 +1,12 @@
 # Google Apps Script 版本
 
-無伺服器實作的 LINE Bot，完全免費託管。
+無伺服器實作的 LINE Bot。P0-9 為未部署候選；平台費用、額度與隔離驗收仍待確認。
 
 ## 🚀 部署步驟
 
 1. 前往 [Google Apps Script](https://script.google.com)
 2. 建立新專案
-3. 使用目前MVP三分類原始碼時，需將 `line_webhook_gas.js`、`park_search_gas.js`、`facility_search_gas.js`、`facility_line_gas.js` 放在同一GAS專案；不能只貼Webhook單檔。本輪僅離線開發，正式部署仍須另行核准。
+3. 使用目前MVP三分類原始碼時，需將 `line_webhook_gas.js`、`park_search_gas.js`、`facility_search_gas.js`、`facility_line_gas.js`、`webhook_security_gas.js`、`webhook_state_gas.js` 放在同一GAS專案；不能只貼Webhook單檔。本輪僅離線開發，正式部署仍須另行核准。
 4. 在「專案設定 > 指令碼屬性」新增以下屬性（**不要寫進程式碼**，會隨原始碼外流）：
 
    | 屬性名稱 | 值 |
@@ -19,11 +19,10 @@
    `TDX_KEYS` 可放多把。基礎會員每把 5 次/分，程式依本分鐘用量挑用得最少的一把；撞到 429（頻率上限）或 401/403（金鑰失效）會自動換下一把，全部用滿時回覆使用者稍後再試。
 5. 部署為 Web App（執行身分：我，存取權：任何人）
 
-   > ⚠️ 這個端點不做請求驗證。Apps Script 的 `doPost(e)` 讀不到 HTTP 標頭，
-   > 拿不到 `X-Line-Signature`，所以 LINE 官方的簽章驗證在 GAS 上做不到。
-   > 任何知道 Web App URL 的人都能觸發查詢並消耗你的 TDX 與 Maps 配額。
+   > P0-9 的 GAS 入口只接受可信入口簽署的短效 envelope，缺設定或裸 LINE body 一律拒絕。
+   > GAS 讀不到 LINE 簽章標頭，須由另案核准的獨立入口驗證原始 bytes。公開 GAS 仍有執行資源 DoS 風險。
 6. 複製 Web App URL
-7. 在 LINE Developers Console 設定 Webhook URL
+7. **不可直接將本候選 GAS URL 設為 LINE Webhook**；未來需先完成獨立入口／origin 防繞過的隔離驗收，再另案核准切換。參見 [P0-9 修復與阻擋](../docs/mvp1/P0-9_REPAIR.md)。
 
 ## 📝 主要功能
 
@@ -122,3 +121,14 @@ CI與完整測試紀錄見 [PK04-07驗證紀錄](../docs/verification/PK04-07.md
 公廁24欄adapter新增臺北ODS的`TP_TOILET`來源契約；原新北相容。兩市共用3km／5筆、距離排序、Flex及walking導航，均必須另有完整人工發布核准，缺表仍0。城市顯示正規化不改來源指紋，UNKNOWN不代表無或24h。上面P0-1／P0-2章節是歷史記錄，其「僅新北公廁」範圍由本節更新。
 
 [P0-7來源／權限／實作報告](../docs/mvp1/P0-7_TAIPEI_TOILETS.md)、[221項受影響測試](../docs/mvp1/P0-7_TEST_RESULTS.md)。原11項安全阻擋未修復，正式版本／發布資料及GAS／LINE驗收仍待完成；沒有部署或資料同步。
+
+
+## P0-9 安全接縫（未部署，取代上述歷史 Cache／直連設定）
+
+Serving 包為六個 JS 檔：Webhook、公園搜尋、公廁共用搜尋／LINE、origin security、bounded state；不包含任何地理編碼／同步維護檔。停車資料解析與公園／公廁發布核准 gate 不變。新增公園次層既有遊具 quickReply，三分類主選單保留。
+
+新增屬性規格（只提出，不寫入正式環境）：`PK_ORIGIN_SECRET`（至少32字元、由安全隨機來源生成且與LINE secret分開）、`PK_ORIGIN_AUDIENCE`（隔離／正式分開）、`PK_LINE_CHANNEL`（LINE webhook destination）。缺任一項即拒絕。真正 LINE channel secret 只放獨立入口，不放 GAS。
+
+事件及分類共用 `pk_state_v1` 單值快照，ScriptLock 短鎖，32 events／16 scopes／7800 UTF-8 bytes 任一先到即拒絕；不能以清空帳本恢復服務。DONE 保留24h、來源事件超10分鐘拒絕；STARTED／UNKNOWN／RECEIVED不自動刪除或重做。容量和同步時限尚未經真 GAS 量測或使用者核定，**不能據此直接上線**。月額度與每把TDX固定分鐘預算改用持久保留與鎖；不是新增每日費用上限，也不是rolling60秒保證。
+
+[最小入口](../line-ingress/handler.mjs)沒有平台資源或部署設定；只驗簽、一次轉送、確認signed ack，GAS仍是唯一查詢／LINE回覆 owner。預設拒絕直連會使現有 LINE→GAS 的裸body失效，故禁止單獨覆蓋正式GAS。發布／回復與版本7人工紀錄見[P0-9手冊](../docs/mvp1/P0-9_RELEASE_RUNBOOK.md)。

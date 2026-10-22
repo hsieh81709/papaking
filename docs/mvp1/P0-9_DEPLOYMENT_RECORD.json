@@ -1,0 +1,18 @@
+{
+  "recorded_date": "2026-10-22",
+  "timezone": "Asia/Taipei",
+  "source": "User manual confirmation in this conversation; no Google API request",
+  "script_id": "17nTkq9Kjypit4XEzTP2xJH-UbIYIhLe8hJHylhfbYUiCo4PCjI9v0OOu",
+  "webapp_version": 7,
+  "execute_as": "USER_DEPLOYING",
+  "access": "ANYONE_ANONYMOUS",
+  "line_route": "LINE directly to GAS Web App",
+  "deployment_id": null,
+  "deployment_url": null,
+  "version_7_source_hashes": null,
+  "formal_manifest_content_received": false,
+  "formal_manifest_note": "User reports manifest obtained and intends to provide it in conversation; no JSON or attachment received as of this report.",
+  "p08_exports_proven_equal_to_version_7": false,
+  "rollback_reference": "User-confirmed version 7; not an executable or security-approved rollback package",
+  "production_changed": false
+}

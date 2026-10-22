@@ -1,5 +1,7 @@
 # PapaKing 路線圖、Issues 草案與分支整合順序
 
+> P0-9（2026-10-22）：最小功能／GAS安全接縫已離線實作、382項受影響測試通過；原11項安全規格不再紅燈。尚未達上線條件：正式manifest／version7內容對照、舊部署防繞過、容量／費用核定、隔離GAS／LINE驗收與資料人工核准。以[P0-9阻擋清單](mvp1/P0-9_REPAIR.md)及[發布／回復手冊](mvp1/P0-9_RELEASE_RUNBOOK.md)為下一關，不自動進行部署或資料同步。
+
 > MVP 1.0最新工作順序：[P0-6精簡上線計畫](mvp1/P0-6_LEAN_RELEASE_PLAN.md)。優先P0-1／P0-2重用、雙北公廁小改與核准資料子集；大型DO架構暫停。下文版本／測試數為歷史盤點，不代表正式部署狀態。
 
 更新：2026-10-20（Asia/Taipei）。功能基準：`main@734ace5`、`feature/v0.3.1-park-flex@b3bb7c1`、`feature/flex-message-v2@0b4a3f0`。

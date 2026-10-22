@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+          fetch-depth: 0 # Offline bundle tests compare preserved historical source refs.
 
       - name: Set up Node
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
@@ -48,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in gas/*.js tools/*.mjs; do
+          for file in gas/*.js tools/*.mjs line-ingress/*.mjs; do
             node --check "$file"
           done
           python - <<'PY'
@@ -97,6 +98,16 @@ jobs:
           set -euo pipefail
           mkdir -p "$PAPAKING_CI_RESULTS"
           node --test --test-reporter=tap test/parking/*.test.mjs | tee "$PAPAKING_CI_RESULTS/parking.tap"
+
+      - name: Run blocking ingress, delivery and concurrency safety checks
+        if: ${{ !cancelled() }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          node --test --test-reporter=tap test/p09/*.test.mjs test/security-spec/*.test.mjs test/preflight/*.test.mjs | tee "$PAPAKING_CI_RESULTS/security.tap"
 
       - name: Run official park source parsing and evidence regressions
         if: ${{ !cancelled() }}

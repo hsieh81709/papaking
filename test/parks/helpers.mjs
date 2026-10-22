@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
+import {trustedDriver} from '../p09/helpers.mjs';
 import {fileURLToPath} from 'node:url';
 export const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 export const plain = value => JSON.parse(JSON.stringify(value));
@@ -39,20 +40,22 @@ export function harness(files=['park_geocoding_gas.js','park_b45_sync_gas.js','p
     copyTo(){const copy=new Sheet('Copy '+this.name,this.data);copy.formulas=new Map(this.formulas);sheets.set(copy.name,copy);events.push({type:'backup',sheet:this.name});return copy;}
   }
   const ss={getSheetByName:name=>sheets.get(name)||null,insertSheet(name){const s=new Sheet(name,[]);sheets.set(name,s);return s;}};
-  const propertyService={getProperty:key=>props[key]??null,setProperty:(k,v)=>{props[k]=v;}};
+  const propertyService={getProperty:key=>props[key]??null,setProperty:(k,v)=>{props[k]=v;},getProperties:()=>({...props}),deleteProperty:k=>{delete props[k];}};
   const scriptCache={get:key=>cache.get(key)??null,put:(key,v)=>cache.set(key,v),remove:key=>cache.delete(key)};
   const context=vm.createContext({
     Logger:{log:v=>logs.push(v)},
     PropertiesService:{getScriptProperties:()=>propertyService},
     CacheService:{getScriptCache:()=>scriptCache},
     SpreadsheetApp:{openById:()=>ss,flush:()=>events.push({type:'flush'})},
-    LockService:{getScriptLock:()=>({tryLock:()=>true,releaseLock:()=>{}})},
+    LockService:{getScriptLock:()=>({tryLock:()=>{if(context.__locked)return false;context.__locked=true;return true;},releaseLock:()=>{context.__locked=false;}})},
     Utilities:{DigestAlgorithm:{SHA_256:'sha256'},Charset:{UTF_8:'utf8'},computeDigest:(_,v)=>Array.from(crypto.createHash('sha256').update(v).digest()),getUuid:()=>crypto.randomUUID(),sleep:()=>{}},
     ContentService:{MimeType:{TEXT:'text'},createTextOutput:value=>({value,setMimeType(){return this;}})}
   });
   const sourceFiles=files.includes('park_search_gas.js')&&!files.includes('facility_search_gas.js')?[...files,'facility_search_gas.js']:files;
   if((files.includes('park_search_gas.js')||files.includes('line_webhook_gas.js'))&&!sourceFiles.includes('facility_line_gas.js')) sourceFiles.push('facility_line_gas.js');
+  if(files.includes('park_search_gas.js')||files.includes('line_webhook_gas.js'))for(const file of ['webhook_state_gas.js','webhook_security_gas.js'])if(!sourceFiles.includes(file))sourceFiles.push(file);
   for(const file of sourceFiles)vm.runInContext(fs.readFileSync(path.join(root,'gas',file),'utf8'),context,{filename:file});
+  if(files.includes('line_webhook_gas.js'))trustedDriver(context,props);
   return {context,events,sheets,logs,props,cache,ss,addSheet(name,data){const s=new Sheet(name,data);sheets.set(name,s);return s;},failWhen(fn){failure=fn;}};
 }
 export function fixture(h, ids=['NP-9','NP-12']) {

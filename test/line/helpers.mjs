@@ -1,3 +1,4 @@
+import {trustedDriver} from '../p09/helpers.mjs';
 import fs from 'node:fs';
 import vm from 'node:vm';
 import {root} from '../parks/helpers.mjs';
@@ -11,6 +12,7 @@ export function router({realPark=false,rows,releases}={}) {
  c.CacheService.getScriptCache=()=>({put:(k,v,ttl)=>cache.set(k,{value:v,until:now+ttl*1000}),get:k=>{const v=cache.get(k);return v&&v.until>now?v.value:null;},remove:k=>cache.delete(k)});
  vm.runInContext(fs.readFileSync(root+'/gas/line_webhook_gas.js','utf8'),c);
  if(typeof c.handlePapaKingMessage_!=='function'&&fs.existsSync(root+'/gas/facility_line_gas.js'))vm.runInContext(fs.readFileSync(root+'/gas/facility_line_gas.js','utf8'),c);
+ trustedDriver(c,h.props);
  const p={'公園ID':'TP-1','縣市':'臺北市','行政區':'萬華區','公園名稱':'合成臺北公園','地址':'甲路','緯度':25,'經度':121.46,'資料狀態':'可用'};
  h.addSheet('公園資料',[parkHeaders,parkHeaders.map(k=>p[k]??'')]);h.addSheet('公園設施',[['公園ID','可查詢遊具類別（依休憩設施）','遊戲場名稱']]);
  const codes=[];c.postLineReply=(token,messages)=>{sent.push({token,messages:plain(messages)});return codes.shift()??200;};

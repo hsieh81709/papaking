@@ -72,7 +72,7 @@ test('real Webhook dispatch requires classification, routes park and explicit pa
  run([text('附近有溜滑梯的公園'),loc,loc]);assert.ok(replies.some(r=>r.msg.intent==='溜滑梯'));assert.equal(parking.length,0);assert.match(replies.at(-1).msg,/選擇.*分類/);
  run([text('停車查詢'),loc]);assert.equal(parking.length,1);
  run([text('選單')]);assert.equal(replies.at(-1).msg.quickReply.items.length,3);
- assert.equal(run([{type:'follow'}]).value,'OK');assert.equal(c.doPost({}).value,'Invalid request');
+ assert.equal(run([{type:'follow'}]).value,'OK');assert.equal(c.doPost({}).value,'rejected');
 });
 test('existing parking Flex smoke tests and NTPC Static Fallback regression pass unchanged',()=>{
  const h=harness(['line_webhook_gas.js']);h.context.testPapaKingStaticFallbackV2();h.context.testPapaKingFlexV2_();

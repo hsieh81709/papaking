@@ -1,8 +1,7 @@
-/** P0-2 LINE category state and toilet rendering. No Sheets writes or geocoding.
- * Cache contains hashed conversation keys and category metadata only, never location.
+/** P0-9 LINE category state and toilet rendering. No Sheets writes or geocoding.
+ * Durable bounded state contains hashed conversation keys, never raw location.
  */
 var FACILITY_INTENT_TTL_ = 600;
-var FACILITY_INTENT_MARKER_TTL_ = 21600;
 
 function facilityIntentKey_(source) {
   source = source || {};
@@ -16,53 +15,57 @@ function facilityIntentKey_(source) {
     .map(function(b) { return ('0' + (b & 255).toString(16)).slice(-2); }).join('').slice(0,32);
 }
 
-function rememberFacilityIntent_(source, kind, intent) {
+function rememberFacilityIntent_(source, kind, intent, selectedAt) {
   var key = facilityIntentKey_(source);
   if (!key) return false;
   if (['parking','park','toilet','unknown'].indexOf(kind) < 0) throw new Error('Unknown category');
-  var value = JSON.stringify({v:1,kind:kind,intent:kind === 'park' ? intent || '全部' : null,
-    expiresAt:Date.now() + FACILITY_INTENT_TTL_ * 1000,requestId:Utilities.getUuid()});
-  var cache = CacheService.getScriptCache();
-  // Keep a longer marker so expiry/partial eviction can be explained. If both
-  // are evicted we ask for a category; absence never implies parking.
-  cache.put(key + '_pending', value, FACILITY_INTENT_MARKER_TTL_);
-  cache.put(key, value, FACILITY_INTENT_TTL_);
-  return true;
+  selectedAt = selectedAt === undefined ? Date.now() : selectedAt;
+  return papaKingState_(function(s) {
+    if(s.intents[key] && s.intents[key].selectedAt > selectedAt) throw new Error('Stale selection');
+    s.intents[key] = {v:2,kind:kind,intent:kind === 'park' ? intent || '全部' : null,
+      selectedAt:selectedAt,expiresAt:Math.min(Date.now(),selectedAt) + FACILITY_INTENT_TTL_*1000,requestId:Utilities.getUuid()};
+    return true;
+  });
 }
-
+function papaKingIntentValue_(value) {
+  if (!value) return {kind:'unset'};
+  if (value.v !== 2 || ['parking','park','toilet','unknown','consumed'].indexOf(value.kind) < 0 ||
+      typeof value.expiresAt !== 'number' || !isFinite(value.expiresAt) || typeof value.requestId !== 'string' ||
+      value.kind === 'park' && ['全部','溜滑梯','鞦韆','共融'].indexOf(value.intent) < 0) throw new Error('Invalid intent');
+  if (value.kind === 'consumed') return {kind:'unset'};
+  if (value.expiresAt <= Date.now()) return {kind:'expired'};
+  var copy=Object.assign({},value);copy.snapshot=JSON.stringify(value);return copy;
+}
 function peekFacilityIntent_(source) {
-  var key = facilityIntentKey_(source);
+  var key=facilityIntentKey_(source);
   if (!key) return {kind:'identity'};
-  var cache = CacheService.getScriptCache(), raw = cache.get(key), marker = cache.get(key + '_pending');
-  if (!raw) return {kind:marker ? 'expired' : 'unset'};
-  // Transitional support for a pre-upgrade park intent still in Cache.
-  if (['全部','溜滑梯','鞦韆','共融'].indexOf(raw) >= 0) return {kind:'park',intent:raw,snapshot:raw};
-  try {
-    var state = JSON.parse(raw);
-    if (!state || state.v !== 1 || ['parking','park','toilet','unknown'].indexOf(state.kind) < 0 ||
-        typeof state.expiresAt !== 'number' || !isFinite(state.expiresAt) ||
-        typeof state.requestId !== 'string' || !state.requestId || raw !== marker ||
-        state.kind === 'park' && ['全部','溜滑梯','鞦韆','共融'].indexOf(state.intent) < 0) return {kind:'unknown'};
-    if (state.expiresAt <= Date.now()) return {kind:'expired'};
-    state.snapshot = raw;
-    return state;
-  } catch (error) { return {kind:'unknown'}; }
+  return papaKingState_(function(s){return papaKingIntentValue_(s.intents[key]);});
 }
-
-function clearFacilityIntent_(source, expected) {
-  var key = facilityIntentKey_(source);
-  if (!key) return;
-  var cache = CacheService.getScriptCache();
-  if (expected !== undefined && cache.get(key) !== expected) return;
-  cache.remove(key);
-  // Preserve a newer selection if another cooperating event replaced it.
-  if (expected === undefined || cache.get(key + '_pending') === expected || !cache.get(key + '_pending')) cache.remove(key + '_pending');
+function clearFacilityIntent_(source, expected, selectedAt) {
+  var key=facilityIntentKey_(source);
+  if (!key) return false;
+  return papaKingState_(function(s){
+    if(expected !== undefined && JSON.stringify(s.intents[key]) !== expected) return false;
+    selectedAt = selectedAt === undefined ? Date.now() : selectedAt;
+    if(s.intents[key] && s.intents[key].selectedAt > selectedAt) throw new Error('Stale cancellation');
+    s.intents[key]={v:2,kind:'consumed',intent:null,selectedAt:selectedAt,expiresAt:Math.min(Date.now(),selectedAt)+FACILITY_INTENT_TTL_*1000,requestId:Utilities.getUuid()};
+    return true;
+  });
 }
-
-function takeFacilityIntent_(source) {
-  var state = peekFacilityIntent_(source);
-  if (state.snapshot) clearFacilityIntent_(source, state.snapshot);
-  return state;
+function takeFacilityIntent_(source, expected) {
+  var key=facilityIntentKey_(source);
+  if (!key) return {kind:'identity'};
+  return papaKingState_(function(s){
+    var result=papaKingIntentValue_(s.intents[key]);
+    if(expected !== undefined && result.snapshot !== expected) return {kind:'unset'};
+    if(result.snapshot) s.intents[key]=Object.assign({},s.intents[key],{kind:'consumed'});
+    return result;
+  });
+}
+function restoreFacilityIntent_(source, state) {
+  var key=facilityIntentKey_(source);
+  if (!key || !state.snapshot || state.expiresAt <= Date.now()) return;
+  papaKingState_(function(s){var current=s.intents[key];if(current && current.kind === 'consumed' && current.requestId === state.requestId) s.intents[key]=JSON.parse(state.snapshot);});
 }
 
 function facilityCommand_(text) {
@@ -96,11 +99,11 @@ function handlePapaKingMessage_(event) {
     try {
       var text = String(event.message.text || '').trim();
       if (/^(選單|功能選單|公園選單|主選單|menu)$/i.test(text)) {
-        clearFacilityIntent_(source);
+        clearFacilityIntent_(source,undefined,event.timestamp);
         message = buildPapaKingQuickMenu_();
       } else {
         var command = facilityCommand_(text);
-        if (!rememberFacilityIntent_(source, command.kind, command.intent)) {
+        if (!rememberFacilityIntent_(source, command.kind, command.intent, event.timestamp)) {
           message = '請在一對一聊天室選擇分類，才能安全保存本次查詢。';
         } else if (command.kind === 'unknown') {
           message = '目前僅支援停車、公園、公廁，請重新選擇查詢分類。';
@@ -128,10 +131,14 @@ function handlePapaKingMessage_(event) {
     replyLine(event.replyToken, '請先選擇查詢分類：停車、公園或公廁，再分享位置。');
     return;
   }
+  if (event.timestamp < state.selectedAt) { replyLine(event.replyToken,'這是較早的位置事件，請重新分享位置。'); return; }
+  try {
+    state = takeFacilityIntent_(source, state.snapshot);
+    if (!state.snapshot) { replyLine(event.replyToken, '分類已變更或正在查詢，請重新選擇分類後分享位置。'); return; }
+  } catch (error) { replyLine(event.replyToken, facilityUserError_(null,error)); return; }
   kind = state.kind;
   if (kind === 'parking') {
     try {
-      clearFacilityIntent_(source, state.snapshot);
       handleLocation(event); // Original quota, TDX, driving rank and rendering stay intact.
     } catch (error) {
       if (error.papaKingReplyAttempted) throw error;
@@ -143,9 +150,10 @@ function handlePapaKingMessage_(event) {
     if (kind === 'park') message = buildParkFlexReply_(event.message.latitude, event.message.longitude, state.intent || '全部', fallback);
     else if (kind === 'toilet') message = buildToiletFlexReply_(event.message.latitude, event.message.longitude, fallback);
     else throw new Error('Unknown category');
-    clearFacilityIntent_(source, state.snapshot);
   } catch (error) {
-    // Preserve the category on data/query failure; never silently switch services.
+    // Only fresh location events may retry. Never erase a newer selection.
+    try { restoreFacilityIntent_(source,state); } catch (restoreError) { /* fail closed */ }
+    // Preserve original expiry, never silently switch services.
     replyLine(event.replyToken, facilityUserError_(kind, error));
     return;
   }
