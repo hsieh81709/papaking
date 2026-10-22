@@ -71,7 +71,7 @@
       "sha256": "ef7bc5603e696e4a8b983341d90aac207d3f81c5e1d95e839664bdfd415ca170"
     }
   ],
-  "formal_manifest_diff": "blocked: content not received",
+  "formal_manifest_diff": "Follow-up 2026-10-22: supplied manifest semantically identical; see P0-9_MANIFEST_COMPARISON.json. Version 7 binding unverified.",
   "deployment_match": "not established",
   "production_operations": false,
   "network_calls_to_production": 0

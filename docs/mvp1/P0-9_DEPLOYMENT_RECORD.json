@@ -10,9 +10,10 @@
   "deployment_id": null,
   "deployment_url": null,
   "version_7_source_hashes": null,
-  "formal_manifest_content_received": false,
-  "formal_manifest_note": "User reports manifest obtained and intends to provide it in conversation; no JSON or attachment received as of this report.",
+  "formal_manifest_content_received": true,
+  "formal_manifest_note": "Manual export received 2026-10-22; semantically identical to development manifest. Not independently bound to deployed version 7.",
   "p08_exports_proven_equal_to_version_7": false,
   "rollback_reference": "User-confirmed version 7; not an executable or security-approved rollback package",
-  "production_changed": false
+  "production_changed": false,
+  "formal_manifest_comparison": "P0-9_MANIFEST_COMPARISON.json"
 }

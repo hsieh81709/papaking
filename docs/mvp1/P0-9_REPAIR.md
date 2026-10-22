@@ -6,7 +6,7 @@
 
 使用者人工確認：Script ID、Web App version **7**、部署者執行、任何人可存取、LINE直接指向GAS。完整[人工紀錄](P0-9_DEPLOYMENT_RECORD.json)保留版本7為後續回復識別參考；未取得deployment ID／URL、版本7原始碼與hash，尚不能據此實際切換或宣稱回復安全。
 
-使用者表示已取得appsscript.json並會在對話提供，但截至交付未收到JSON／附件；工作區只有repo的 `gas/appsscript.json`。**正式manifest逐欄差異待確認，沒有假定兩者相同。** repo manifest未修改，仍為Asia/Taipei、V8、STACKDRIVER、空dependencies、USER_DEPLOYING／ANYONE_ANONYMOUS。人工確認的執行／存取設定與repo欄位語義相符；時區、OAuth scopes（含未列scope的實際授權）、依賴與其他設定不能由此推定。獨立入口不需要給GAS新增LINE header權限；GAS沒有此能力。
+已於2026-10-22收到使用者提供的 `appsscript.json` 人工匯出。與repo manifest逐欄JSON比對**完全相同，無語義差異**；原始bytes僅CRLF與末尾換行不同，完整SHA-256／大小見[manifest比對回執](P0-9_MANIFEST_COMPARISON.json)。兩者均為Asia/Taipei、V8、STACKDRIVER、空dependencies、USER_DEPLOYING／ANYONE_ANONYMOUS，均未明列oauthScopes。未明列scope不代表沒有授權，也不能證明實際已授權範圍相同。repo manifest及原附件未修改；此人工匯出未附版本綁定證據，**仍不能確認等同部署版本7的manifest**。獨立入口不需要給GAS新增LINE header權限；GAS沒有此能力。
 
 [P0-8五份原始碼](P0-8_EXPORTED_GAS_REVIEW.md)仍只作相容性參考，未宣稱等同version7。本輪停止重試Google API，沒有真實LINE、TDX或Maps呼叫。
 
@@ -61,7 +61,7 @@
 
 必須補齊：
 
-1. 正式manifest JSON、實際deployment ID／URL、version7對應source/hash；完整舊部署與trigger清冊。版本7只作人工識別參考，不可當已驗證安全回復包。
+1. 實際deployment ID／URL、version7對應source/hash及manifest版本綁定證據（manifest內容已收到且與repo相同）；完整舊部署與trigger清冊。版本7只作人工識別參考，不可當已驗證安全回復包。
 2. 容量／保留期、同步8秒時限、實際Properties讀寫額度及並行的隔離量測；目前32事件方案很可能不適合公開正式流量。需先核定流量，若不合格另案提出最小擴充，不自行啟動DO。
 3. 獨立入口平台、費用上限、限流／告警、origin secret儲存／輪替／撤銷與舊部署防繞過；公開GAS執行DoS殘餘風險需評估。
 4. provider每日預算／共享key所有writer及舊月額度移轉協定；不能以月額度或固定分鐘限制替代每日成本控制。

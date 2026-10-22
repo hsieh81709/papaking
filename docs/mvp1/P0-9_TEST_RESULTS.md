@@ -48,6 +48,6 @@ R1–R4保留合法首query、重送／失敗／同時事件的安全斷言；R5
 
 [來源回執](P0-9_SOURCE_RECEIPT.json)列候選hash與未修改路徑。Webhook原104個函式區塊中95個保持逐字一致；比較區塊含相鄰註解，不是AST語意判斷。原handleLocation／buildReply／主要資料解析與導航沿用，不從P0-8舊版回退已修過的20項停車契約差異。
 
-本地證據目錄 `.local/mvp1-p09-20261022/` 保存before／after TAP、容量與原始碼回執、完整Git diff。未提交使用者原始GAS全文、憑證或資料。正式manifest內容尚未提供，差異仍待驗。
+本地證據目錄 `.local/mvp1-p09-20261022/` 保存before／after TAP、容量與原始碼回執、完整Git diff。未提交使用者原始GAS全文、憑證或資料。後續已收到正式專案manifest人工匯出，JSON逐欄相同、僅換行格式不同，見[P0-9_MANIFEST_COMPARISON.json](P0-9_MANIFEST_COMPARISON.json)。原始SHA-256與本地副本保留；version7綁定仍待證明。本次僅補文件及JSON／hash檢查，沒有重跑或新增宣稱382項功能測試結果。
 
 **限制：** VM鎖競爭是可控重入模型，跨VM測試是共享持久快照重啟，不是Google平台跨程序壓力測試；單值寫入／readback、執行時限、redirect、官方LINE schema／手機及發布資料都未取得真實端到端證據。公開GAS資源DoS與其他舊部署未解。382項通過不等於安全修復已正式完成或批准上線。

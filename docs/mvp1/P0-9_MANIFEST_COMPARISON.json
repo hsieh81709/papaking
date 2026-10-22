@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-22",
+  "source": "User-uploaded manual GAS manifest export",
+  "filename": "appsscript.json",
+  "attachment_file_id": "file_00000000c3e48206ae5ea6d65f5dfa2b",
+  "raw_size_bytes": 212,
+  "raw_sha256": "a47456758cf92546bc6b65e307857713185ea3c76315aafd7c32b5f441e0115f",
+  "development_path": "gas/appsscript.json",
+  "development_size_bytes": 204,
+  "development_sha256": "ef7bc5603e696e4a8b983341d90aac207d3f81c5e1d95e839664bdfd415ca170",
+  "json_semantically_equal": true,
+  "byte_identical": false,
+  "text_equal_after_line_ending_and_terminal_newline_normalization": true,
+  "semantic_differences": [],
+  "version_7_binding_verified": false,
+  "explicit_oauth_scopes_present": false,
+  "deployment_operations": false
+}
