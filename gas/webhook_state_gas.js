@@ -16,7 +16,18 @@ function papaKingState_(change) {
   return papaKingWithLock_(function() {
     var p = PropertiesService.getScriptProperties(), raw = p.getProperty('pk_state_v1');
     var state = raw === null ? {v:1,events:{},intents:{}} : JSON.parse(raw);
-    if (!state || state.v !== 1 || !state.events || !state.intents || Array.isArray(state.events) || Array.isArray(state.intents)) throw new Error('Invalid durable state');
+    if (!state || state.v !== 1 || !state.events || !state.intents ||
+        typeof state.events !== 'object' || typeof state.intents !== 'object' ||
+        Array.isArray(state.events) || Array.isArray(state.intents)) throw new Error('Invalid durable state');
+    // Validate before GC: corruption must never erase event identity evidence.
+    Object.keys(state.events).forEach(function(k) {
+      var r=state.events[k];
+      if (!r || typeof r !== 'object' || Array.isArray(r) ||
+          typeof r.hash !== 'string' || !/^[a-f0-9]{64}$/.test(r.hash) ||
+          typeof r.time !== 'number' || !isFinite(r.time) || r.time < 0 ||
+          ['RECEIVED','STARTED','DONE','UNKNOWN'].indexOf(r.status)<0 ||
+          r.replyAttempts !== undefined && r.replyAttempts !== 1 && r.replyAttempts !== 2) throw new Error('Invalid event record');
+    });
     var now = Date.now();
     Object.keys(state.events).forEach(function(k) {
       var r=state.events[k];
@@ -74,8 +85,27 @@ function papaKingFinishEvent_(key, status) {
 
 // Per-execution owner only; every event claim remains durable across executions.
 var papaKingCurrentEventKey_ = null;
-function papaKingReplyPhase_(phase) {
+function papaKingBeginReply_(messages, isFallback, fallbackMessages) {
+  if (!papaKingCurrentEventKey_) return; // Manual/offline callers have no webhook owner.
+  var key=papaKingCurrentEventKey_;
+  papaKingState_(function(s) {
+    var r=s.events[key];
+    if (!r || r.status !== 'STARTED') throw new Error('Reply owner missing');
+    if (isFallback) {
+      if (r.replyAttempts !== 1 || r.phase !== 'REJECTED' || r.replyCode !== 400 ||
+          !r.fallbackHash || r.fallbackHash !== papaKingHash_(messages) ||
+          !messages.length || messages.some(function(m){return m.type !== 'text';})) throw new Error('Fallback not authorized');
+      r.replyAttempts=2;
+    } else {
+      if (r.replyAttempts || r.phase) throw new Error('Reply already attempted');
+      r.replyAttempts=1;
+      if (fallbackMessages && fallbackMessages.length) r.fallbackHash=papaKingHash_(fallbackMessages);
+    }
+    r.phase='REPLY_STARTED'; // Commit this complete attempt reservation before HTTP.
+  });
+}
+function papaKingReplyPhase_(phase, code) {
   if (!papaKingCurrentEventKey_) return; // Offline/manual formatter callers have no webhook claim.
   var key=papaKingCurrentEventKey_;
-  papaKingState_(function(s){if(!s.events[key] || s.events[key].status !== 'STARTED') throw new Error('Reply owner missing');s.events[key].phase=phase;});
+  papaKingState_(function(s){if(!s.events[key] || s.events[key].status !== 'STARTED') throw new Error('Reply owner missing');s.events[key].phase=phase;s.events[key].replyCode=code;});
 }

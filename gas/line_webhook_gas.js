@@ -425,26 +425,24 @@ function replyLine(token, items, fallbackText) {
   var messages = [].concat(items).slice(0, LINE_REPLY_MAX_MESSAGES).map(function (item) {
     return typeof item === 'string' ? lineTextMessage_(item) : item;
   });
-  var code = papaKingPostReply_(token, messages);
   var textOnly = messages.filter(function (m) { return m.type === 'text'; });
-  // A 400 means the rich reply was rejected. Do not retry success, transport
-  // failures or other statuses whose delivery state may be uncertain.
-  if (code === 400 && textOnly.length < messages.length) {
-    if (!textOnly.length && typeof fallbackText === 'string' && fallbackText.trim()) {
-      textOnly = [lineTextMessage_(fallbackText)];
-    }
-    if (textOnly.length) {
-      Logger.log('LINE 拒收含 Flex 的回覆，改只送文字');
-      papaKingPostReply_(token, textOnly); // One bounded fallback attempt, never recursion.
-    }
+  var hasRich = textOnly.length < messages.length;
+  if (hasRich && !textOnly.length && typeof fallbackText === 'string' && fallbackText.trim()) {
+    textOnly = [lineTextMessage_(fallbackText)];
+  }
+  // Freeze the exact fallback before the first send; never regenerate a query.
+  var code = papaKingPostReply_(token, messages, false, hasRich ? textOnly : null);
+  if (code === 400 && hasRich && textOnly.length) {
+    Logger.log('LINE 拒收含 Flex 的回覆，改只送文字');
+    papaKingPostReply_(token, textOnly, true);
   }
 }
 
-function papaKingPostReply_(token, messages) {
+function papaKingPostReply_(token, messages, isFallback, fallbackMessages) {
   try {
-    papaKingReplyPhase_('REPLY_STARTED'); // Durable before each primary/fallback attempt.
+    papaKingBeginReply_(messages, isFallback === true, fallbackMessages);
     var code=postLineReply(token, messages);
-    papaKingReplyPhase_(code === 200 ? 'DELIVERED' : code >= 500 ? 'UNKNOWN_REPLY' : 'REJECTED');
+    papaKingReplyPhase_(code === 200 ? 'DELIVERED' : code >= 500 ? 'UNKNOWN_REPLY' : 'REJECTED', code);
     return code;
   }
   catch (error) { error.papaKingReplyAttempted = true; throw error; }
