@@ -179,12 +179,17 @@ function toiletNavigation_(result) {
   return url;
 }
 
+function toiletPositionLabel_(result) {
+  return result.publicationSource === 'source-unverified' ?
+    '位置未經人工驗證，導航點可能不是入口' : '位置已人工確認；入口、樓層與開放狀況依現場標示。';
+}
+
 function formatToiletReply_(results) {
   return '🚻 附近公廁（3 公里內）\n' + results.map(function(p, i) {
     var url = toiletNavigation_(p);
     return (i+1) + '. ' + String(p.name).slice(0,60) + '（' + String(p.district || p.address).slice(0,160) + '）\n' +
-      '距離約 ' + Math.round(p.km * 1000) + ' 公尺（直線）\n' + toiletResultLines_(p).join('\n') + '\n導航至公廁位置：' + url;
-  }).join('\n\n') + '\n※ 導航至審核記錄的位置；入口、樓層與實際開放狀況請依現場標示。';
+      '距離約 ' + Math.round(p.km * 1000) + ' 公尺（直線）\n' + toiletResultLines_(p).join('\n') + '\n' + toiletPositionLabel_(p) + '\n導航至公廁位置：' + url;
+  }).join('\n\n') + '\n※ 導航至資料記載的座標；入口、樓層與實際開放狀況請依現場標示。';
 }
 
 function buildToiletFlexReply_(lat, lon, fallback) {
@@ -206,7 +211,7 @@ function buildToiletFlexReply_(lat, lon, fallback) {
       {type:'text',text:([p.district,p.address].filter(Boolean).join(' ') || '位置說明未確認').slice(0,160),size:'sm',wrap:true},
       {type:'text',text:'距離約 ' + Math.round(p.km*1000) + ' 公尺（直線）',weight:'bold',color:theme.color,wrap:true}
     ].concat(toiletResultLines_(p).map(function(line) { return {type:'text',text:line,size:'sm',wrap:true}; }))
-      .concat([{type:'text',text:'導航至審核記錄的位置；入口、樓層與開放狀況依現場標示。',size:'xs',color:'#666666',wrap:true}])},
+      .concat([{type:'text',text:toiletPositionLabel_(p),size:'xs',color:'#666666',wrap:true}])},
       footer:{type:'box',layout:'vertical',contents:[{type:'button',style:'primary',color:theme.color,
         action:{type:'uri',label:'Google Maps 導航',uri:url}}]}};
   });
@@ -219,10 +224,12 @@ function buildToiletFlexReply_(lat, lon, fallback) {
  */
 function facilityEmptyMessage_(kind, lat, lon, details) {
   var name = kind === 'toilet' ? '公廁' : '公園';
+  var scope = kind === 'toilet' ? '符合發布條件資料（含位置未經人工驗證資料）' : '已核准發布資料';
   var padLat = PARK_RADIUS_KM / 111, padLon = PARK_RADIUS_KM / (111 * Math.cos(25 * Math.PI / 180));
   if (Number(lat) < 24.7-padLat || Number(lat) > 25.4+padLat || Number(lon) < 121.2-padLon || Number(lon) > 122.1+padLon) {
-    return '該地區的' + name + '資料尚未開放；目前公園與公廁提供雙北（臺北／新北）已核准資料。';
+    return '該地區的' + name + '資料尚未開放；目前提供雙北（臺北／新北）' + scope + '。';
   }
+  if (kind === 'toilet' && details.publishedCount === 0) return '目前尚無符合發布條件的公廁資料，暫不提供導航；待確認或資料不足不代表附近沒有設施。';
   if (details.publishedCount === 0) return '目前尚無已核准發布的' + name + '資料，暫不提供導航；待驗收不代表附近沒有設施。';
-  return '附近沒有符合條件的' + name + '資料（3 公里內）；僅搜尋已核准發布資料。';
+  return '附近沒有符合條件的' + name + '資料（3 公里內）；僅搜尋' + scope + '。';
 }

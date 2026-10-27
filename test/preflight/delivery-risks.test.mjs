@@ -51,9 +51,9 @@ test('R10 FIXED: eleven-event batch accounts for all eleven',()=>{
 test('SAFETY: 599 seconds valid and 600 seconds expired with no implicit parking',()=>{
  const h=router();h.text('附近公廁');h.advance(599);assert.equal(h.c.peekFacilityIntent_(direct).kind,'toilet');h.advance(1);h.location();assert.deepEqual(h.routes,[]);assert.match(h.lastText(),/逾時/);
 });
-test('SAFETY: absent release ledger excludes NTPC parks and toilets, no navigation',()=>{
- const h=router({realPark:true});const p=h.sheets.get('公園資料');p.data[1][0]='NP-SYNTHETIC';p.data[1][1]='新北市';p.data[1][2]='板橋區';h.sheets.delete('設施發布核准');
- for(const t of ['附近公園','附近公廁']){h.text(t);h.location();assert.match(h.lastText(),/尚無已核准發布/);assert.ok(!JSON.stringify(h.sent.at(-1)).includes('maps/dir'));}assert.deepEqual(h.events,[]);
+test('SAFETY: absent release ledger excludes NTPC parks and uncertain toilets, no navigation',()=>{
+ const h=router({realPark:true});const p=h.sheets.get('公園資料');p.data[1][0]='NP-SYNTHETIC';p.data[1][1]='新北市';p.data[1][2]='板橋區';h.sheets.delete('設施發布核准');h.sheets.get('公廁資料').data[1][18]='待確認';
+ for(const t of ['附近公園','附近公廁']){h.text(t);h.location();assert.match(h.lastText(),t==='附近公園'?/尚無已核准發布/:/尚無符合發布條件/);assert.ok(!JSON.stringify(h.sent.at(-1)).includes('maps/dir'));}assert.deepEqual(h.events,[]);
 });
 test('SAFETY: HTTP400 fallback does not requery or invoke parking',()=>{
  const h=router();h.text('附近公廁');h.codes.push(400,200);h.location();assert.deepEqual(h.routes,['toilet']);assert.deepEqual(h.sent.slice(-2).map(b=>b.messages[0].type),['flex','text']);

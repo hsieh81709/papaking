@@ -13,8 +13,8 @@ test('menu and unsupported-area prompts describe both-city toilet coverage',()=>
  const h=router();h.text('選單');assert.match(h.lastText(),/公廁.*雙北/);assert.ok(!/公廁目前提供新北/.test(h.lastText()));
  h.text('附近公廁');h.location(direct,22.63,120.3);assert.match(h.lastText(),/公廁.*雙北/);
 });
-test('Taipei missing approvals is distinct from no nearby result and produces no navigation',()=>{
- const h=query({releases:[]});assert.match(h.lastText(),/尚無已核准發布/);assert.ok(!JSON.stringify(h.sent.at(-1)).includes('maps/dir'));
+test('Taipei pending-confirmation source is distinct from no nearby result and produces no navigation',()=>{
+ const h=query({rows:[{...tp,'資料狀態':'待確認'}],releases:[]});assert.match(h.lastText(),/尚無符合發布條件/);assert.ok(!JSON.stringify(h.sent.at(-1)).includes('maps/dir'));
 });
 test('approved Taipei toilet outside radius yields no-match rather than no-approved',()=>{
  const h=query({rows:[{...tp,'緯度':'25.1'}]});assert.match(h.lastText(),/附近沒有符合條件/);assert.ok(!/尚無已核准/.test(h.lastText()));

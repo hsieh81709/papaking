@@ -15,14 +15,14 @@ for(const city of ['臺北市','台北市'])test(`approved ${city} TP_TOILET use
  assert.equal(r.openingHours,'UNKNOWN');assert.equal(r.accessibility,'UNKNOWN');assert.equal(r.changingTable,'UNKNOWN');
  const u=new URL(h.context.facilityNavigationUrl_(r));assert.equal(u.searchParams.get('destination'),'25.0001,121.46');assert.equal(u.searchParams.get('travelmode'),'walking');
 });
-for(const mode of ['no-ledger','empty-ledger','revoked','fingerprint-changed','coordinate-changed','borrow-city-approval'])test(`Taipei ${mode} remains unpublished`,()=>{
+for(const mode of ['no-ledger','empty-ledger','revoked','fingerprint-changed','coordinate-changed','borrow-city-approval'])test(`Taipei ${mode} obeys source-lane and existing-review policy`,()=>{
  const input=row(),approved=release('toilet',input),h=setup([input],mode==='empty-ledger'?[]:[approved]);
  if(mode==='no-ledger')h.sheets.delete('設施發布核准');
  if(mode==='revoked')h.sheets.get('設施發布核准').data[1][6]='撤銷';
  if(mode==='fingerprint-changed')h.sheets.get('公廁資料').data[1][4]='合成另一地址';
  if(mode==='coordinate-changed')h.sheets.get('公廁資料').data[1][5]='25.001';
  if(mode==='borrow-city-approval')h.sheets.get('公廁資料').data[1][1]='台北市';
- assert.deepEqual(plain(h.context.toiletSearch_(25,121.46)),[]);assert.equal(h.events.length,0);
+ const rs=h.context.toiletSearch_(25,121.46);if(['no-ledger','empty-ledger'].includes(mode)){assert.equal(rs.length,1);assert.equal(rs[0].publication,null);assert.equal(rs[0].publicationSource,'source-unverified');}else assert.deepEqual(plain(rs),[]);assert.equal(h.events.length,0);
 });
 for(const change of [{'資料來源ID':'NTPC_TOILET'},{'資料來源ID':'UNKNOWN'},{'縣市':'桃園市'},{'行政區':''},{'資料狀態':'待確認'},{'整併狀態':'待人工確認'},{'緯度':'NaN'},{'經度':'0x79'},{'緯度':'25,001'},{'緯度':'277000'},{'緯度':'24.6'},{'公廁ID':true}])test(`Taipei quality rejects ${JSON.stringify(change)} even with synthetic approval`,()=>{
  const h=setup([row(change)]);assert.equal(h.context.toiletSearch_(25,121.46).length,0);

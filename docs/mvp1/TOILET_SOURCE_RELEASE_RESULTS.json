@@ -1,0 +1,61 @@
+{
+  "baseCommit": "ee61939",
+  "inputSha256": "f48d18a23833675a058fe4c5beee0879dcfc006dee6df1f66619c2ac67f0b79e",
+  "releaseSheetPresent": false,
+  "sourceRows": 5481,
+  "before": 0,
+  "after": 5281,
+  "excluded": 200,
+  "byCity": {
+    "新北市": {
+      "source": 3976,
+      "before": 0,
+      "after": 3830,
+      "excluded": 146,
+      "latitudeInputTypes": {
+        "number": 2500,
+        "string": 1476
+      },
+      "longitudeInputTypes": {
+        "number": 2500,
+        "string": 1476
+      }
+    },
+    "臺北市": {
+      "source": 1505,
+      "before": 0,
+      "after": 1451,
+      "excluded": 54,
+      "latitudeInputTypes": {
+        "string": 1505
+      },
+      "longitudeInputTypes": {
+        "string": 1505
+      }
+    }
+  },
+  "exclusiveExclusionReasons": {
+    "資料狀態不允許": 200
+  },
+  "limitation": "User export snapshot only, not latest live Sheets or deployed GAS verification; no human approvals inferred or changed.",
+  "snapshotEvidence": {
+    "format": "User-provided ODS, not a newly supplied XLSX",
+    "odsFilename": "PapaKing 生活設施資料庫 (1).ods",
+    "odsSha256": "9c185f67d334fd26f427c5c3d221b6dd7f7779aaf1e56f82c27010e4d93ca81d",
+    "liveSheetsRead": false,
+    "sourceModified": false,
+    "humanLedgerInSnapshot": false
+  },
+  "excludedSourceStatuses": {
+    "待確認": 200
+  },
+  "excludedMergeStatuses": {
+    "待人工確認": 200
+  },
+  "pendingTaipeiMissingDistrict": 119,
+  "currentCodeHashes": {
+    "facility_search_gas.js": "5ac7e4cfbae856213bebf0f33bd3bdb734468aa370408e538ab5e1f135ca2bb9",
+    "facility_line_gas.js": "94fcc3cbccde60ee9b283f2cbe4b49edbb3efebca045fad975fb4a33b4971691"
+  },
+  "navigationValidatedCount": 5281
+}

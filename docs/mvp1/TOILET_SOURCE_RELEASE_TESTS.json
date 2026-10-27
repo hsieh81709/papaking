@@ -1,0 +1,55 @@
+{
+  "dateTaipei": "2026-10-27",
+  "baseCommit": "ee61939e44ce10a5b586544d711c4ea6914b6e8a",
+  "beforeInitial": {
+    "tests": 28,
+    "pass": 22,
+    "fail": 6
+  },
+  "beforeFinalFixtureReplayAgainstBase": {
+    "tests": 29,
+    "pass": 22,
+    "fail": 7
+  },
+  "affected": {
+    "pass": 259,
+    "fail": 0,
+    "skip": 0
+  },
+  "fullRegression": {
+    "node": 563,
+    "parkSourcesPython": 33,
+    "parkReviewPython": 22,
+    "worker": 25,
+    "totalPass": 643,
+    "fail": 0,
+    "skip": 0,
+    "knownOwnerSpoofRiskCharacterizations": 1
+  },
+  "runtimeFileHashes": {
+    "facility_search_gas.js": "5ac7e4cfbae856213bebf0f33bd3bdb734468aa370408e538ab5e1f135ca2bb9",
+    "facility_line_gas.js": "94fcc3cbccde60ee9b283f2cbe4b49edbb3efebca045fad975fb4a33b4971691"
+  },
+  "protectedFilesIdenticalToBase": [
+    "gas/line_webhook_gas.js",
+    "gas/park_search_gas.js",
+    "gas/webhook_security_gas.js",
+    "gas/webhook_state_gas.js",
+    "gas/appsscript.json",
+    "gas/park_geocoding_gas.js",
+    "gas/park_b43_regeocode_gas.js",
+    "gas/park_b45_sync_gas.js"
+  ],
+  "workerModified": false,
+  "deployed": false,
+  "sheetsModified": false,
+  "liveGas8ReadBack": false,
+  "mobileAcceptancePerformedThisRound": false,
+  "commands": [
+    "node --test --test-reporter=tap test/facilities/*.test.mjs test/line/*.test.mjs test/personal/*.test.mjs test/preflight/*.test.mjs",
+    "node --test --test-reporter=tap test/line/*.test.mjs test/parks/*.test.mjs test/facilities/*.test.mjs test/parking/*.test.mjs test/preflight/*.test.mjs test/security-spec/*.test.mjs test/p09/*.test.mjs test/personal/*.test.mjs",
+    "python -m unittest discover -s test/park_sources -v",
+    "python -m unittest discover -s test/park_review -v",
+    "(cd sponsor-worker && npm test)"
+  ]
+}

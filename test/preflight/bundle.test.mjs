@@ -6,8 +6,8 @@ import {execFileSync} from 'node:child_process';
 import {harness,root} from '../parks/helpers.mjs';
 const files=['line_webhook_gas.js','park_search_gas.js','facility_search_gas.js','facility_line_gas.js','webhook_security_gas.js','webhook_state_gas.js'];
 function permutations(xs){return xs.length?xs.flatMap((x,i)=>permutations(xs.filter((_,j)=>i!==j)).map(rest=>[x,...rest])):[[]];}
-test('search engines and manifest remain byte-identical to pre-P09 d4d6aff',()=>{
- for(const f of ['park_search_gas.js','facility_search_gas.js','appsscript.json'])assert.equal(fs.readFileSync(`${root}/gas/${f}`,'utf8'),execFileSync('git',['show',`d4d6aff:gas/${f}`],{cwd:root,encoding:'utf8'}));
+test('park engine and manifest remain byte-identical to pre-P09 d4d6aff',()=>{
+ for(const f of ['park_search_gas.js','appsscript.json'])assert.equal(fs.readFileSync(`${root}/gas/${f}`,'utf8'),execFileSync('git',['show',`d4d6aff:gas/${f}`],{cwd:root,encoding:'utf8'}));
 });
 test('all 720 bundle load orders initialize the six files without maintenance or harness autoload',()=>{
  for(const order of permutations(files)){
@@ -20,3 +20,5 @@ test('all 720 bundle load orders initialize the six files without maintenance or
 test('six-file bundle has no duplicate named global function declarations',()=>{
  const seen=new Set();for(const f of files){const src=fs.readFileSync(`${root}/gas/${f}`,'utf8');for(const match of src.matchAll(/^function\s+([\w$]+)\s*\(/gm)){assert.ok(!seen.has(match[1]),match[1]);seen.add(match[1]);}}
 });
+
+test('park publication, fingerprint, release index and navigation approval branch unchanged from ee61939',()=>{const old=execFileSync('git',['show','ee61939:gas/facility_search_gas.js'],{cwd:root,encoding:'utf8'}),now=fs.readFileSync(root+'/gas/facility_search_gas.js','utf8');for(const fn of ['facilityReleaseIndex_','facilityReleaseFor_','facilityParkPublication_','facilitySourceFingerprint_']){const section=s=>s.slice(s.indexOf('function '+fn+'(')).split('\n}')[0];assert.equal(section(now),section(old));}const branch=s=>s.slice(s.indexOf('  var proof = facility && facility.publication;'));assert.equal(branch(now),branch(old));});

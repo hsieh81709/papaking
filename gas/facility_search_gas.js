@@ -2,7 +2,8 @@
  * P0-1: read-only park/toilet search primitives. No geocoding, writes or LINE calls.
  * Requires park_search_gas.js (validation, distance and header reader).
  * 設施發布核准 is an operator-maintained approval ledger, NOT inferred from grades.
- * No ledger is shipped, created or populated here. Missing ledger fails closed.
+ * No ledger is shipped, created or populated here. Parks require approval;
+ * eligible pending toilets may use the explicit source-unverified lane.
  */
 var FACILITY_TOILET_HEADERS_ = ['公廁ID','縣市','行政區','公廁名稱','地址','緯度','經度','公廁類型','無障礙設施','尿布臺','兒童座椅','開放時間','管理單位','資料來源ID','原始資料ID','來源網址','資料更新日期','同步時間','資料狀態','備註','設施紀錄數','整併狀態','進入限制','關聯設施ID'];
 var FACILITY_PARK_HEADERS_ = ['公園ID','縣市','行政區','公園名稱','地址','緯度','經度','管理單位','資料來源ID','原始資料ID','來源網址','資料更新日期','同步時間','資料狀態','備註'];
@@ -145,12 +146,44 @@ function facilityRankNearby_(lat, lon, records) {
   }).slice(0, PARK_TOP_N);
 }
 
+/** Toilet-only index retains a blocking key for every existing review record.
+ * Duplicate, revoked, stale or incomplete reviews never fall back to source release.
+ * Park index and approval semantics are unchanged.
+ */
+function facilityToiletReleaseIndex_(workbook) {
+  var sheet = facilitySheet_(workbook, '設施發布核准', true), index = Object.create(null);
+  if (!sheet) return index;
+  parkRowsAsObjects_(sheet, FACILITY_RELEASE_HEADERS_).forEach(function(row) {
+    var key = facilityText_(row['設施類別']) + ':' + facilityText_(row['設施ID']);
+    index[key] = Object.prototype.hasOwnProperty.call(index, key) ? null : row;
+  });
+  return index;
+}
+
+function facilityToiletSourceValid_(row) {
+  return facilityRequiredText_(row['公廁ID']) && facilityToiletCity_(row) &&
+    facilityRequiredText_(row['公廁名稱']) &&
+    (row['行政區'] === '' || facilityRequiredText_(row['行政區'])) &&
+    facilityRequiredText_(row['地址']) && facilityRequiredText_(row['資料來源ID']) &&
+    row['資料狀態'] === '待驗收' && ['保留獨立','自動整併'].indexOf(row['整併狀態']) >= 0 &&
+    facilityTwinCityPosition_(row['緯度'], row['經度']);
+}
+
+/** Read-only source lane, explicitly separate from human approval metadata. */
+function facilityToiletSource_(row, releases) {
+  var key = '公廁:' + facilityText_(row['公廁ID']);
+  if (Object.prototype.hasOwnProperty.call(releases, key) || !facilityToiletSourceValid_(row)) return null;
+  var source = {};
+  FACILITY_TOILET_HEADERS_.forEach(function(k) { source[k] = row[k]; });
+  return {mode:'source-unverified', source:source, sourceFingerprint:facilitySourceFingerprint_('toilet',row)};
+}
+
 /** Toilet adapter: no detail join, no candidate coordinates, no status promotion. */
 function getFacilityData_(kind, details) {
   if (kind !== 'toilet') throw new Error('此資料適配器僅支援公廁類別');
   var workbook = facilityOpenWorkbook_(), sheet = facilitySheet_(workbook, '公廁資料');
   var rows = parkRowsAsObjects_(sheet, FACILITY_TOILET_HEADERS_);
-  var releases = facilityReleaseIndex_(workbook), counts = Object.create(null);
+  var releases = facilityToiletReleaseIndex_(workbook), counts = Object.create(null);
   rows.forEach(function(row) {
     var key = facilityText_(row['公廁ID']);
     counts[key] = (counts[key] || 0) + 1;
@@ -160,15 +193,19 @@ function getFacilityData_(kind, details) {
     if (!facilityRequiredText_(row['公廁ID']) || counts[key] !== 1 || !city ||
         ['可用','待驗收'].indexOf(row['資料狀態']) < 0 ||
         ['保留獨立','自動整併'].indexOf(row['整併狀態']) < 0 ||
-        !facilityRequiredText_(row['公廁名稱']) || !facilityRequiredText_(row['行政區']) ||
+        !facilityRequiredText_(row['公廁名稱']) ||
         !facilityRequiredText_(row['地址']) || !facilityRequiredText_(row['資料來源ID']) ||
         !facilityTwinCityPosition_(row['緯度'], row['經度'])) return null;
-    var publication = facilityReleaseFor_('toilet', row, releases);
-    if (!publication) return null;
+    // Preserve the old human-review adapter contract; source-only rows may lack a district.
+    var publication = facilityRequiredText_(row['行政區']) ? facilityReleaseFor_('toilet', row, releases) : null;
+    var sourceRelease = publication ? null : facilityToiletSource_(row, releases);
+    if (!publication && !sourceRelease) return null;
     return {kind: 'toilet', id: key, name: facilityText_(row['公廁名稱']), city: city,
       district: facilityText_(row['行政區']), address: facilityText_(row['地址']),
       lat: Number(row['緯度']), lon: Number(row['經度']), sourceStatus: row['資料狀態'],
-      sourceFingerprint: publication.sourceFingerprint, positionType: publication.positionType,
+      sourceFingerprint: publication ? publication.sourceFingerprint : sourceRelease.sourceFingerprint,
+      positionType: publication ? publication.positionType : '未知',
+      publicationSource: publication ? 'human-verified' : 'source-unverified', sourceRelease:sourceRelease,
       openingHours: facilityText_(row['開放時間']) || 'UNKNOWN',
       accessRestrictions: facilityText_(row['進入限制']) || 'UNKNOWN',
       accessibility: facilityText_(row['無障礙設施']) || 'UNKNOWN',
@@ -200,6 +237,19 @@ function facilityWalkingUrl_(lat, lon) {
  * only trusted server-side callers may construct these objects.
  */
 function facilityNavigationUrl_(facility) {
+  if (facility && facility.kind === 'toilet' && facility.publicationSource === 'source-unverified') {
+    var metadata = facility.sourceRelease, row = metadata && metadata.source;
+    if (facility.publication || !metadata || metadata.mode !== 'source-unverified' || !row ||
+        !facilityToiletSourceValid_(row) || facility.sourceStatus !== '待驗收' || facility.positionType !== '未知' ||
+        facility.id !== facilityText_(row['公廁ID']) || facility.name !== facilityText_(row['公廁名稱']) ||
+        facility.city !== facilityToiletCity_(row) || facility.district !== facilityText_(row['行政區']) ||
+        facility.address !== facilityText_(row['地址']) ||
+        facility.lat !== Number(row['緯度']) || facility.lon !== Number(row['經度']) ||
+        !facilityTwinCityPosition_(facility.lat,facility.lon) ||
+        metadata.sourceFingerprint !== facility.sourceFingerprint ||
+        facilitySourceFingerprint_('toilet',row) !== facility.sourceFingerprint) return null;
+    return facilityWalkingUrl_(facility.lat,facility.lon);
+  }
   var proof = facility && facility.publication;
   if (!proof || ['park','toilet'].indexOf(facility.kind) < 0 || proof.kind !== facility.kind ||
       proof.id !== facility.id || proof.lat !== facility.lat || proof.lon !== facility.lon ||

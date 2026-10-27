@@ -1,0 +1,331 @@
+TAP version 13
+# Subtest: 臺北市 pending source without ledger can search and navigate, never human-approved
+not ok 1 - 臺北市 pending source without ledger can search and navigate, never human-approved
+  ---
+  duration_ms: 10.109137
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:9:62'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(r)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:11:9)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.start (node:internal/test_runner/test:1242:17)
+    startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17)
+  ...
+# Subtest: 新北市 pending source without ledger can search and navigate, never human-approved
+not ok 2 - 新北市 pending source without ledger can search and navigate, never human-approved
+  ---
+  duration_ms: 2.44844
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:9:62'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(r)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:11:9)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: source exclusion {"資料狀態":"待確認"}
+ok 3 - source exclusion {"資料狀態":"待確認"}
+  ---
+  duration_ms: 1.863351
+  type: 'test'
+  ...
+# Subtest: source exclusion {"資料狀態":"可用"}
+ok 4 - source exclusion {"資料狀態":"可用"}
+  ---
+  duration_ms: 1.518563
+  type: 'test'
+  ...
+# Subtest: source exclusion {"資料狀態":"停用"}
+ok 5 - source exclusion {"資料狀態":"停用"}
+  ---
+  duration_ms: 1.564192
+  type: 'test'
+  ...
+# Subtest: source exclusion {"整併狀態":"待人工確認"}
+ok 6 - source exclusion {"整併狀態":"待人工確認"}
+  ---
+  duration_ms: 1.675059
+  type: 'test'
+  ...
+# Subtest: source exclusion {"公廁ID":""}
+ok 7 - source exclusion {"公廁ID":""}
+  ---
+  duration_ms: 2.29451
+  type: 'test'
+  ...
+# Subtest: source exclusion {"公廁名稱":""}
+ok 8 - source exclusion {"公廁名稱":""}
+  ---
+  duration_ms: 1.413766
+  type: 'test'
+  ...
+# Subtest: source exclusion {"地址":""}
+ok 9 - source exclusion {"地址":""}
+  ---
+  duration_ms: 1.469319
+  type: 'test'
+  ...
+# Subtest: source exclusion {"行政區":false}
+ok 10 - source exclusion {"行政區":false}
+  ---
+  duration_ms: 1.517171
+  type: 'test'
+  ...
+# Subtest: source exclusion {"資料來源ID":""}
+ok 11 - source exclusion {"資料來源ID":""}
+  ---
+  duration_ms: 1.434156
+  type: 'test'
+  ...
+# Subtest: source exclusion {"縣市":"桃園市"}
+ok 12 - source exclusion {"縣市":"桃園市"}
+  ---
+  duration_ms: 1.405493
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":true}
+ok 13 - source exclusion {"緯度":true}
+  ---
+  duration_ms: 1.472804
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":"0x19"}
+ok 14 - source exclusion {"緯度":"0x19"}
+  ---
+  duration_ms: 1.461567
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":"25x"}
+ok 15 - source exclusion {"緯度":"25x"}
+  ---
+  duration_ms: 2.446598
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":""}
+ok 16 - source exclusion {"緯度":""}
+  ---
+  duration_ms: 1.379914
+  type: 'test'
+  ...
+# Subtest: source exclusion {"經度":null}
+ok 17 - source exclusion {"經度":null}
+  ---
+  duration_ms: 1.419504
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":null}
+ok 18 - source exclusion {"緯度":null}
+  ---
+  duration_ms: 1.405963
+  type: 'test'
+  ...
+# Subtest: source exclusion {"緯度":24.6}
+ok 19 - source exclusion {"緯度":24.6}
+  ---
+  duration_ms: 1.527015
+  type: 'test'
+  ...
+# Subtest: duplicate source IDs cannot navigate without ledger
+ok 20 - duplicate source IDs cannot navigate without ledger
+  ---
+  duration_ms: 1.559534
+  type: 'test'
+  ...
+# Subtest: complete human approval retains confirmed label, source lane cannot downgrade it
+not ok 21 - complete human approval retains confirmed label, source lane cannot downgrade it
+  ---
+  duration_ms: 3.451219
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:17:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+
+    + undefined
+    - 'human-verified'
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'human-verified'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:17:157)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: existing revoked ledger record blocks source fallback
+ok 22 - existing revoked ledger record blocks source fallback
+  ---
+  duration_ms: 1.461337
+  type: 'test'
+  ...
+# Subtest: existing stale ledger record blocks source fallback
+ok 23 - existing stale ledger record blocks source fallback
+  ---
+  duration_ms: 3.276315
+  type: 'test'
+  ...
+# Subtest: existing duplicate ledger record blocks source fallback
+ok 24 - existing duplicate ledger record blocks source fallback
+  ---
+  duration_ms: 1.399595
+  type: 'test'
+  ...
+# Subtest: existing incomplete ledger record blocks source fallback
+ok 25 - existing incomplete ledger record blocks source fallback
+  ---
+  duration_ms: 1.37703
+  type: 'test'
+  ...
+# Subtest: source proof rejects coordinate, identity, status and fingerprint mutation; raw row cannot navigate
+not ok 26 - source proof rejects coordinate, identity, status and fingerprint mutation; raw row cannot navigate
+  ---
+  duration_ms: 2.205265
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(r)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:19:195)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: source toilets from both cities rank together, cap5, 3km boundary
+not ok 27 - source toilets from both cities rank together, cap5, 3km boundary
+  ---
+  duration_ms: 2.711646
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:20:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+
+    + []
+    - [
+    -   'SOURCE-0',
+    -   'SOURCE-1',
+    -   'SOURCE-2',
+    -   'SOURCE-3',
+    -   'SOURCE-4'
+    - ]
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    0: 'SOURCE-0'
+    1: 'SOURCE-1'
+    2: 'SOURCE-2'
+    3: 'SOURCE-3'
+    4: 'SOURCE-4'
+  actual:
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:20:275)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: new toilet lane does not publish NTPC parks or turn unknown amenities into absence
+not ok 28 - new toilet lane does not publish NTPC parks or turn unknown amenities into absence
+  ---
+  duration_ms: 2.588101
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:21:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(r)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:21:464)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: pending source may omit district when city and full address exist, without inventing a district
+not ok 29 - pending source may omit district when city and full address exist, without inventing a district
+  ---
+  duration_ms: 1.724402
+  type: 'test'
+  location: '/tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:23:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+
+      assert.ok(r)
+
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/pk-toilet-before-bh3xyun6/test/facilities/source-publication.test.mjs:23:201)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1382:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+    Test.postRun (node:internal/test_runner/test:1522:19)
+    Test.run (node:internal/test_runner/test:1447:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+1..29
+# tests 29
+# suites 0
+# pass 22
+# fail 7
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 163.093174

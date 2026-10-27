@@ -1,0 +1,86 @@
+{
+  "type": "flex",
+  "altText": "附近公廁：找到 1 筆，請滑動查看。",
+  "contents": {
+    "type": "carousel",
+    "contents": [
+      {
+        "type": "bubble",
+        "body": {
+          "type": "box",
+          "layout": "vertical",
+          "spacing": "md",
+          "contents": [
+            {
+              "type": "text",
+              "text": "合成臺北公廁",
+              "weight": "bold",
+              "size": "lg",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "萬華區 合成路1號",
+              "size": "sm",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "距離約 11 公尺（直線）",
+              "weight": "bold",
+              "color": "#00838F",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "開放時間：未確認",
+              "size": "sm",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "無障礙設施：未確認",
+              "size": "sm",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "尿布臺：未確認",
+              "size": "sm",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "進入限制：樓層:1F",
+              "size": "sm",
+              "wrap": true
+            },
+            {
+              "type": "text",
+              "text": "位置未經人工驗證，導航點可能不是入口",
+              "size": "xs",
+              "color": "#666666",
+              "wrap": true
+            }
+          ]
+        },
+        "footer": {
+          "type": "box",
+          "layout": "vertical",
+          "contents": [
+            {
+              "type": "button",
+              "style": "primary",
+              "color": "#00838F",
+              "action": {
+                "type": "uri",
+                "label": "Google Maps 導航",
+                "uri": "https://www.google.com/maps/dir/?api=1&destination=25.0001%2C121.46&travelmode=walking"
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
