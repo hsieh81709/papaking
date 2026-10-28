@@ -40,6 +40,12 @@ jobs:
       - name: Install pinned XLSX reader
         run: python -m pip install --disable-pip-version-check -r tools/requirements-park-export.txt
 
+      - name: Install pinned Rich Menu image dependency and CJK font
+        run: |
+          python -m pip install --disable-pip-version-check -r tools/requirements-v9_1-lite.txt
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends fonts-noto-cjk
+
       - name: Install locked Worker dependencies
         id: worker-deps
         working-directory: sponsor-worker
@@ -128,6 +134,18 @@ jobs:
           set -euo pipefail
           mkdir -p "$PAPAKING_CI_RESULTS"
           python -m unittest discover -s test/park_review -v 2>&1 | tee "$PAPAKING_CI_RESULTS/park-review.log"
+
+      - name: Run V9.1 Lite layout and UX regressions offline
+        if: ${{ !cancelled() }}
+        env:
+          PAPAKING_CI_RESULTS: ${{ runner.temp }}/papaking-ci-results
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$PAPAKING_CI_RESULTS"
+          python -m unittest discover -s test -p 'test_lite*.py' -v 2>&1 | tee "$PAPAKING_CI_RESULTS/lite-tools.log"
+          python -O test/verify_lite.py
+          node --test --test-reporter=tap test/v9_1_lite/*.test.mjs | tee "$PAPAKING_CI_RESULTS/lite-display.tap"
 
       - name: Run sponsor Worker tests without cloud services
         if: ${{ !cancelled() && steps.worker-deps.outcome == 'success' }}

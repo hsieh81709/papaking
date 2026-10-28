@@ -144,7 +144,7 @@ var TDX_CITY = {
 /** V0.3.1 LINE Quick Reply：使用者輸入「選單」時顯示。 */
 function buildPapaKingQuickMenu_() {
   var choices = [['停車','停車查詢'],['公園','附近公園'],['公廁','附近公廁']];
-  return {type:'text',text:'請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁提供雙北（臺北／新北）已核准資料。',
+  return {type:'text',text:'請選擇查詢分類，再分享位置。公園提供雙北已發布資料；公廁提供雙北符合發布條件的資料，部分位置尚未完成逐筆人工驗證；實際入口及開放狀況請依現場資訊確認。',
     quickReply:{items:choices.map(function(pair) {
       return {type:'action',action:{type:'message',label:pair[0],text:pair[1]}};
     })}};
@@ -379,7 +379,7 @@ function flexBubble(card) {
     size: 'kilo',
     header: {
       type: 'box', layout: 'vertical', backgroundColor: theme.color, paddingAll: '10px',
-      contents: [{ type: 'text', text: String(card.kind || '附近地點'), color: '#FFFFFF', size: 'sm', weight: 'bold' }]
+      contents: [{ type: 'text', text: '🅿️ ' + String(card.kind || '附近地點'), color: '#FFFFFF', size: 'sm', weight: 'bold' }]
     },
     body: {
       type: 'box', layout: 'vertical', spacing: 'sm', paddingAll: '12px',

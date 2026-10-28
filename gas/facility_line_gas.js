@@ -98,7 +98,9 @@ function handlePapaKingMessage_(event) {
   if (event.message.type === 'text') {
     try {
       var text = String(event.message.text || '').trim();
-      if (/^(選單|功能選單|公園選單|主選單|menu)$/i.test(text)) {
+      if (text === '使用說明') {
+        message = buildPapaKingHelp_();
+      } else if (/^(選單|功能選單|公園選單|主選單|menu)$/i.test(text)) {
         clearFacilityIntent_(source,undefined,event.timestamp);
         message = buildPapaKingQuickMenu_();
       } else {
@@ -207,7 +209,7 @@ function buildToiletFlexReply_(lat, lon, fallback) {
   var cards = results.map(function(p) {
     var url = toiletNavigation_(p);
     return {type:'bubble',body:{type:'box',layout:'vertical',spacing:'md',contents:[
-      {type:'text',text:String(p.name).slice(0,60),weight:'bold',size:'lg',wrap:true},
+      {type:'text',text:'🚻 ' + String(p.name).slice(0,60),weight:'bold',size:'lg',wrap:true},
       {type:'text',text:([p.district,p.address].filter(Boolean).join(' ') || '位置說明未確認').slice(0,160),size:'sm',wrap:true},
       {type:'text',text:'距離約 ' + Math.round(p.km*1000) + ' 公尺（直線）',weight:'bold',color:theme.color,wrap:true}
     ].concat(toiletResultLines_(p).map(function(line) { return {type:'text',text:line,size:'sm',wrap:true}; }))
@@ -232,4 +234,16 @@ function facilityEmptyMessage_(kind, lat, lon, details) {
   if (kind === 'toilet' && details.publishedCount === 0) return '目前尚無符合發布條件的公廁資料，暫不提供導航；待確認或資料不足不代表附近沒有設施。';
   if (details.publishedCount === 0) return '目前尚無已核准發布的' + name + '資料，暫不提供導航；待驗收不代表附近沒有設施。';
   return '附近沒有符合條件的' + name + '資料（3 公里內）；僅搜尋' + scope + '。';
+}
+
+
+/** V9.1 Lite: help does not alter current search intent. */
+function buildPapaKingHelp_() {
+  return 'PapaKing 使用說明\n'
+    + '1. 點選附近停車、附近公園或附近公廁。\n'
+    + '2. 點選「分享位置」並允許 LINE 傳送位置。\n'
+    + '3. 查看附近結果，點選地圖或導航按鈕。\n'
+    + '停車搜尋範圍為 1 公里；公園與公廁為 3 公里。\n'
+    + '分類有效 10 分鐘，每次搜尋後請重新選擇。\n'
+    + '公廁提供雙北符合發布條件的資料，部分位置尚未完成逐筆人工驗證；實際入口及開放狀況請依現場資訊確認。';
 }

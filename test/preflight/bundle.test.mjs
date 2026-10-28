@@ -6,8 +6,16 @@ import {execFileSync} from 'node:child_process';
 import {harness,root} from '../parks/helpers.mjs';
 const files=['line_webhook_gas.js','park_search_gas.js','facility_search_gas.js','facility_line_gas.js','webhook_security_gas.js','webhook_state_gas.js'];
 function permutations(xs){return xs.length?xs.flatMap((x,i)=>permutations(xs.filter((_,j)=>i!==j)).map(rest=>[x,...rest])):[[]];}
-test('park engine and manifest remain byte-identical to pre-P09 d4d6aff',()=>{
- for(const f of ['park_search_gas.js','appsscript.json'])assert.equal(fs.readFileSync(`${root}/gas/${f}`,'utf8'),execFileSync('git',['show',`d4d6aff:gas/${f}`],{cwd:root,encoding:'utf8'}));
+test('only authorized park renderer icon differs; park core and manifest remain immutable',()=>{
+ const original=execFileSync('git',['show','fb069a7:gas/park_search_gas.js'],{cwd:root,encoding:'utf8'});
+ const before="text: p.name || '未命名公園', weight: 'bold'";
+ const after="text: '🌳 ' + (p.name || '未命名公園'), weight: 'bold'";
+ assert.equal(original.split(before).length-1,1,'exact approved renderer anchor');
+ const actual=fs.readFileSync(`${root}/gas/park_search_gas.js`,'utf8');
+ assert.equal(actual,original.replace(before,after),'every other byte, including search/coordinates/distance/sort/navigation/approval, stays identical');
+ assert.equal(actual.split(after).length-1,1,'exactly one renderer icon');
+ assert.equal(fs.readFileSync(`${root}/gas/appsscript.json`,'utf8'),execFileSync('git',['show','d4d6aff:gas/appsscript.json'],{cwd:root,encoding:'utf8'}));
+ for(const f of ['facility_search_gas.js','webhook_security_gas.js','webhook_state_gas.js'])assert.equal(fs.readFileSync(`${root}/gas/${f}`,'utf8'),execFileSync('git',['show',`fb069a7:gas/${f}`],{cwd:root,encoding:'utf8'}));
 });
 test('all 720 bundle load orders initialize the six files without maintenance or harness autoload',()=>{
  for(const order of permutations(files)){

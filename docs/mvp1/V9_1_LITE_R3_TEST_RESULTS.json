@@ -1,0 +1,62 @@
+{
+  "dateTaipei": "2026-10-28",
+  "baseCommit": "4880cbe0f69e58daa54f63b278388dcebbf1c7df",
+  "v9RuntimeBase": "fb069a71a2040131c042e812e64332370ccb1294",
+  "originalRegression": {
+    "node": 563,
+    "sourcesPython": 33,
+    "reviewPython": 22,
+    "worker": 25,
+    "totalPass": 643,
+    "fail": 0,
+    "skip": 0
+  },
+  "liteTests": {
+    "python": 22,
+    "node": 7,
+    "totalPass": 29,
+    "fail": 0,
+    "skip": 0,
+    "retainedR2ToolTests": 4,
+    "newR3Tests": 25
+  },
+  "combinedPass": 672,
+  "before": {
+    "r2OriginalRegressionPass": 641,
+    "r2OriginalRegressionFail": 2,
+    "r3InitialOriginalNodePass": 562,
+    "r3InitialOriginalNodeFail": 1,
+    "toolsBeforeTests": 20,
+    "toolsBeforeFail": 2,
+    "displayBeforeTests": 7,
+    "displayBeforeFail": 2
+  },
+  "protectedFilesUnchanged": [
+    "gas/facility_search_gas.js",
+    "gas/webhook_security_gas.js",
+    "gas/webhook_state_gas.js",
+    "gas/appsscript.json",
+    "gas/park_geocoding_gas.js",
+    "gas/park_b43_regeocode_gas.js",
+    "gas/park_b45_sync_gas.js"
+  ],
+  "workerChanged": false,
+  "originalRepoBranch": "feature/flex-message-v2",
+  "originalRepoHead": "4880cbe0f69e58daa54f63b278388dcebbf1c7df",
+  "originalRepoClean": true,
+  "image": {
+    "width": 2500,
+    "height": 1686,
+    "bytes": 89743,
+    "sha256": "a981ab5cb176fdd6a04f466a108ccdb9b301da4d0aad60f2ce8ef9b4ac13cbe9",
+    "officialLineApiVerified": false
+  },
+  "failureEvidencePreserved": true,
+  "allF1F2F3ClosedOffline": true,
+  "remoteCiRun": false,
+  "formalDeploymentPerformed": false,
+  "formalSheetsWritten": false,
+  "richMenuPublishedOrLinked": false,
+  "original643TestsSkippedOrRemoved": false,
+  "note": "One unchanged original test characterizes accepted owner-ID forgery risk; this is not LINE signature validation."
+}

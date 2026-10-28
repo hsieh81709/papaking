@@ -1,0 +1,12 @@
+{
+  "size": {"width": 2500, "height": 1686},
+  "selected": true,
+  "name": "PapaKing V9.1 2x2",
+  "chatBarText": "PapaKing 功能選單",
+  "areas": [
+    {"bounds": {"x": 0, "y": 0, "width": 1250, "height": 843}, "action": {"type": "message", "label": "附近停車", "text": "停車查詢"}},
+    {"bounds": {"x": 1250, "y": 0, "width": 1250, "height": 843}, "action": {"type": "message", "label": "附近公園", "text": "附近公園"}},
+    {"bounds": {"x": 0, "y": 843, "width": 1250, "height": 843}, "action": {"type": "message", "label": "附近公廁", "text": "附近公廁"}},
+    {"bounds": {"x": 1250, "y": 843, "width": 1250, "height": 843}, "action": {"type": "message", "label": "使用說明", "text": "使用說明"}}
+  ]
+}

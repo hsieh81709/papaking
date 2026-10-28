@@ -220,7 +220,7 @@ function buildParkFlexReply_(lat, lon, intent, fallback) {
       body: {
         type: 'box', layout: 'vertical', spacing: 'md',
         contents: [
-          { type: 'text', text: p.name || '未命名公園', weight: 'bold', size: 'lg', wrap: true },
+          { type: 'text', text: '🌳 ' + (p.name || '未命名公園'), weight: 'bold', size: 'lg', wrap: true },
           { type: 'text', text: [p.city, p.district].filter(Boolean).join(' ') || '行政區未提供', size: 'sm', color: '#666666', wrap: true },
           { type: 'text', text: '距離約 ' + Math.round(p.km * 1000) + ' 公尺（直線）', size: 'md', weight: 'bold', color: '#227A4C' },
           { type: 'text', text: facilities ? '設施：' + facilities : '設施資料未確認', size: 'sm', color: '#555555', wrap: true },
